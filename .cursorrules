@@ -1,0 +1,126 @@
+# Careleo Insurer CRM Demo - Cursor Rules
+
+## Project Overview
+This is a Phase 1 demo CRM for health insurers. All data and actions are mocked for demonstration purposes only.
+
+## Code Standards
+
+### TypeScript
+- Use strict TypeScript mode (enabled in tsconfig.json)
+- Fix linting errors instead of disabling rules
+- Use proper type definitions for all props and state
+- Prefer interfaces over types for object shapes
+
+### React & Next.js
+- Use Next.js 14 App Router patterns
+- Prefer functional components with hooks
+- Use proper key props for list items
+- Implement proper error boundaries where needed
+
+### Styling
+- Use Tailwind CSS for all styling
+- Follow the existing design system
+- Use shadcn/ui components consistently
+- Maintain responsive design patterns
+
+### File Organization
+- Keep components focused and single-purpose
+- Use proper file naming conventions
+- Group related functionality together
+- Maintain clear import/export patterns
+
+## Development Guidelines
+
+### Component Structure
+- Keep components under 300 LOC when possible
+- Split larger components into smaller, focused ones
+- Use proper prop interfaces
+- Implement accessibility features (ARIA labels, keyboard navigation)
+
+### State Management
+- Use React hooks for local state
+- Keep state as close to where it's used as possible
+- Use proper dependency arrays in useEffect
+- Implement loading states for better UX
+
+### Data Handling
+- All data is mocked - no real API calls
+- Use the mock data generators in /lib/mock.ts
+- Implement proper error handling for demo scenarios
+- Use deterministic data generation for consistency
+
+### Performance
+- Use React.memo for expensive components when needed
+- Implement proper loading states
+- Use lazy loading for large datasets
+- Optimize re-renders with proper dependencies
+
+## Security & Compliance
+
+### Demo Limitations
+- Never use real PHI or sensitive data
+- Always include demo disclaimers
+- Implement proper audit logging (mocked)
+- Use placeholder data for all sensitive fields
+
+### Accessibility
+- Implement proper ARIA labels
+- Ensure keyboard navigation works
+- Use semantic HTML elements
+- Test with screen readers
+
+## Code Review Checklist
+
+### Before Committing
+- [ ] TypeScript compiles without errors
+- [ ] ESLint passes without warnings
+- [ ] Components are properly typed
+- [ ] Accessibility features are implemented
+- [ ] Demo disclaimers are present
+- [ ] No real PHI or sensitive data
+
+### Component Quality
+- [ ] Single responsibility principle
+- [ ] Proper prop interfaces
+- [ ] Error handling implemented
+- [ ] Loading states included
+- [ ] Responsive design maintained
+
+### Performance
+- [ ] No unnecessary re-renders
+- [ ] Proper dependency arrays
+- [ ] Efficient data structures
+- [ ] Loading states for async operations
+
+## File Naming Conventions
+- Components: PascalCase (e.g., `MembersTab.tsx`)
+- Utilities: camelCase (e.g., `mockData.ts`)
+- Types: PascalCase (e.g., `Member.ts`)
+- Constants: UPPER_SNAKE_CASE (e.g., `API_ENDPOINTS`)
+
+## Import Organization
+1. React and Next.js imports
+2. Third-party library imports
+3. Internal component imports
+4. Utility and type imports
+5. Relative imports
+
+## Error Handling
+- Use try-catch for async operations
+- Implement proper error boundaries
+- Show user-friendly error messages
+- Log errors for debugging (in demo mode)
+
+## Testing Considerations
+- Components should be easily testable
+- Use proper prop interfaces for mocking
+- Implement loading and error states
+- Test accessibility features
+
+## Documentation
+- Include JSDoc comments for complex functions
+- Document component props and usage
+- Maintain README with setup instructions
+- Include demo disclaimers prominently
+
+Remember: This is a demo application. Always prioritize demo functionality over production concerns, but maintain professional code quality standards.
