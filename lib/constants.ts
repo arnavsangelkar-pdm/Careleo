@@ -1,6 +1,12 @@
 // Constants for the Careleo CRM demo
 // All data and actions are mocked for demonstration purposes
 
+export const LOB = [
+  "Medicare Advantage", 
+  "Medicaid", 
+  "Commercial"
+] as const
+
 export const TEAMS = [
   'Risk Adjustment',
   'Quality', 
@@ -11,6 +17,8 @@ export const TEAMS = [
 ] as const
 
 export const PURPOSES = [
+  'HRA Completion',
+  'HRA Reminder',
   'AWV',
   'HEDIS - A1c',
   'HEDIS - Mammogram', 
@@ -57,6 +65,7 @@ export const TIME_PERIODS = {
   UNREACHED_THRESHOLD: 30
 } as const
 
+export type Lob = typeof LOB[number]
 export type Team = typeof TEAMS[number]
 export type Purpose = typeof PURPOSES[number] 
 export type Channel = typeof CHANNELS[number]

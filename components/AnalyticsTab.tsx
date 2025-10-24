@@ -11,6 +11,11 @@ import {
   type Outreach,
   type Member
 } from '@/lib/mock'
+import { 
+  touchesPerMember, 
+  monthOverMonth, 
+  getHraOutreach
+} from '@/lib/metrics'
 import { TEAMS, PURPOSES } from '@/lib/constants'
 import { 
   BarChart, 
@@ -54,6 +59,27 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
   const highRiskMembers = members.filter(m => m.risk > 70).length
   const avgRiskScore = Math.round(members.reduce((sum, m) => sum + m.risk, 0) / totalMembers)
   const outreachPerMember = totalMembers > 0 ? Math.round(outreach.length / totalMembers * 10) / 10 : 0
+  
+  // Calculate HRA touch metrics
+  const avgTouchpoints30d = touchesPerMember(outreach, totalMembers, 30)
+  const avgTouchpoints60d = touchesPerMember(outreach, totalMembers, 60)
+  const momTouchpoints = monthOverMonth(avgTouchpoints30d, avgTouchpoints60d)
+  
+  const hraTouches30d = getHraOutreach(outreach).filter(o => {
+    const touchDate = new Date(o.timestamp)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - 30)
+    return touchDate >= cutoffDate
+  }).length
+  
+  const hraTouches60d = getHraOutreach(outreach).filter(o => {
+    const touchDate = new Date(o.timestamp)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - 60)
+    return touchDate >= cutoffDate
+  }).length
+  
+  const momHraTouches = monthOverMonth(hraTouches30d, hraTouches60d)
 
   // Color scheme for charts
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
@@ -66,7 +92,7 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
       />
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Stat
           title="Total Members"
           value={totalMembers}
@@ -84,10 +110,16 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
           subtitle="Population average"
         />
         <Stat
-          title="Outreach per Member"
-          value={outreachPerMember}
-          subtitle="Engagement rate"
-          trend={{ value: 12, isPositive: true }}
+          title="Avg Touchpoints / Member (30d)"
+          value={avgTouchpoints30d}
+          subtitle={`MoM ${momTouchpoints.direction === 'up' ? '+' : momTouchpoints.direction === 'down' ? '-' : ''}${momTouchpoints.deltaPct}%`}
+          trend={{ value: momTouchpoints.deltaPct, isPositive: momTouchpoints.direction === 'up' }}
+        />
+        <Stat
+          title="HRA Touches (30d)"
+          value={hraTouches30d}
+          subtitle={`MoM ${momHraTouches.direction === 'up' ? '+' : momHraTouches.direction === 'down' ? '-' : ''}${momHraTouches.deltaPct}%`}
+          trend={{ value: momHraTouches.deltaPct, isPositive: momHraTouches.direction === 'up' }}
         />
       </div>
 

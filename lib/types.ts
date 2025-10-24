@@ -2,6 +2,16 @@
 // All data and actions are mocked for demonstration purposes
 
 import type { Outreach } from './mock'
+import type { Lob } from './constants'
+
+export interface PlanInfo {
+  contractId: string   // e.g., H1234
+  pbp: string          // e.g., 017
+  lob: Lob
+  planName: string     // e.g., "Care Advantage HMO"
+  county?: string
+  effectiveDate?: string // ISO
+}
 
 export interface MemberSdohProfile {
   socialRiskScore: number // 0-100

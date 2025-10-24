@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { SectionTitle } from './SectionTitle'
 import { Stat } from './Stat'
 import { MockQuickAdd } from './MockQuickAdd'
@@ -16,6 +17,12 @@ import {
   getOutreachByChannel,
   type Outreach
 } from '@/lib/mock'
+import { 
+  touchesPerMember, 
+  monthOverMonth, 
+  getHraOutreach,
+  getTopChannel
+} from '@/lib/metrics'
 import { 
   Search, 
   Phone, 
@@ -33,13 +40,18 @@ interface OutreachTabProps {
   outreach: Outreach[]
   members: any[]
   onAddOutreach: (data: any) => void
+  onNavigateToOutreach?: (filters: Record<string, string>) => void
 }
 
-export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabProps) {
+export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutreach }: OutreachTabProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [channelFilter, setChannelFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [teamFilter, setTeamFilter] = useState('All')
+  const [purposeFilter, setPurposeFilter] = useState('All')
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [selectedOutreach, setSelectedOutreach] = useState<Outreach | null>(null)
+  const [showDetailsSheet, setShowDetailsSheet] = useState(false)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [memberSearchQuery, setMemberSearchQuery] = useState('')
   const [memberRiskFilter, setMemberRiskFilter] = useState('All')
@@ -59,8 +71,10 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
     
     const matchesChannel = channelFilter === 'All' || entry.channel === channelFilter
     const matchesStatus = statusFilter === 'All' || entry.status === statusFilter
+    const matchesTeam = teamFilter === 'All' || entry.team === teamFilter
+    const matchesPurpose = purposeFilter === 'All' || entry.purpose === purposeFilter
     
-    return matchesSearch && matchesChannel && matchesStatus
+    return matchesSearch && matchesChannel && matchesStatus && matchesTeam && matchesPurpose
   })
 
   const channelData = getOutreachByChannel(outreach)
@@ -70,6 +84,27 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
   const topChannel = channelData.reduce((prev, current) => 
     prev.count > current.count ? prev : current
   )
+  
+  // Calculate touchpoint metrics
+  const avgTouchpoints30d = touchesPerMember(outreach, members.length, 30)
+  const avgTouchpoints60d = touchesPerMember(outreach, members.length, 60)
+  const momTouchpoints = monthOverMonth(avgTouchpoints30d, avgTouchpoints60d)
+  
+  const hraTouches30d = getHraOutreach(outreach).filter(o => {
+    const touchDate = new Date(o.timestamp)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - 30)
+    return touchDate >= cutoffDate
+  }).length
+  
+  const hraTouches60d = getHraOutreach(outreach).filter(o => {
+    const touchDate = new Date(o.timestamp)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - 60)
+    return touchDate >= cutoffDate
+  }).length
+  
+  const momHraTouches = monthOverMonth(hraTouches30d, hraTouches60d)
 
   // Filter members for selection
   const filteredMembers = React.useMemo(() => {
@@ -160,6 +195,11 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
     }
   }
 
+  const handleOutreachClick = (entry: Outreach) => {
+    setSelectedOutreach(entry)
+    setShowDetailsSheet(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -181,10 +221,11 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
           subtitle="All channels"
         />
         <Stat
-          title="Completion Rate"
-          value={`${completionRate}%`}
-          subtitle="Success rate"
-          trend={{ value: 8, isPositive: true }}
+          title="Avg Touchpoints / Member (30d)"
+          value={avgTouchpoints30d}
+          subtitle={`MoM ${momTouchpoints.direction === 'up' ? '+' : momTouchpoints.direction === 'down' ? '-' : ''}${momTouchpoints.deltaPct}%`}
+          trend={{ value: momTouchpoints.deltaPct, isPositive: momTouchpoints.direction === 'up' }}
+          onClick={() => onNavigateToOutreach?.({ filter: 'last30d' })}
         />
         <Stat
           title="Top Channel"
@@ -192,13 +233,11 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
           subtitle={`${topChannel.count} interactions`}
         />
         <Stat
-          title="This Week"
-          value={outreach.filter(o => {
-            const date = new Date(o.timestamp)
-            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-            return date > weekAgo
-          }).length}
-          subtitle="Recent activity"
+          title="HRA Touches (30d)"
+          value={hraTouches30d}
+          subtitle={`MoM ${momHraTouches.direction === 'up' ? '+' : momHraTouches.direction === 'down' ? '-' : ''}${momHraTouches.deltaPct}%`}
+          trend={{ value: momHraTouches.deltaPct, isPositive: momHraTouches.direction === 'up' }}
+          onClick={() => onNavigateToOutreach?.({ filter: 'hra' })}
         />
       </div>
 
@@ -208,7 +247,7 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
           <CardTitle>Outreach Directory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -242,6 +281,40 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
                 <SelectItem value="Failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Teams</SelectItem>
+                <SelectItem value="Risk Adjustment">Risk Adjustment</SelectItem>
+                <SelectItem value="Quality">Quality</SelectItem>
+                <SelectItem value="Member Services">Member Services</SelectItem>
+                <SelectItem value="Case Management">Case Management</SelectItem>
+                <SelectItem value="Pharmacy">Pharmacy</SelectItem>
+                <SelectItem value="Community Partnerships">Community Partnerships</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={purposeFilter} onValueChange={setPurposeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by purpose" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Purposes</SelectItem>
+                <SelectItem value="HRA Completion">HRA Completion</SelectItem>
+                <SelectItem value="HRA Reminder">HRA Reminder</SelectItem>
+                <SelectItem value="AWV">AWV</SelectItem>
+                <SelectItem value="HEDIS - A1c">HEDIS - A1c</SelectItem>
+                <SelectItem value="HEDIS - Mammogram">HEDIS - Mammogram</SelectItem>
+                <SelectItem value="Medication Adherence">Medication Adherence</SelectItem>
+                <SelectItem value="RAF/Chart Retrieval">RAF/Chart Retrieval</SelectItem>
+                <SelectItem value="Care Transition Follow-up">Care Transition Follow-up</SelectItem>
+                <SelectItem value="SDOH—Food">SDOH—Food</SelectItem>
+                <SelectItem value="SDOH—Transport">SDOH—Transport</SelectItem>
+                <SelectItem value="SDOH—Utilities">SDOH—Utilities</SelectItem>
+                <SelectItem value="SDOH—BH">SDOH—BH</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="flex items-center text-sm text-gray-500">
               {filteredOutreach.length} results
             </div>
@@ -254,9 +327,10 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
               return (
                 <div 
                   key={entry.id} 
-                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                   role="article"
                   aria-label={`Outreach entry: ${entry.topic}`}
+                  onClick={() => handleOutreachClick(entry)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">
@@ -281,6 +355,14 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
                             <span>{new Date(entry.timestamp).toLocaleDateString()}</span>
                           </div>
                           <span>Agent: {entry.agent}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {entry.team}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {entry.purpose}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -514,6 +596,79 @@ export function OutreachTab({ outreach, members, onAddOutreach }: OutreachTabPro
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Outreach Details Sheet */}
+      <Sheet open={showDetailsSheet} onOpenChange={setShowDetailsSheet}>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>Outreach Details</SheetTitle>
+            <SheetDescription>
+              Detailed information about the selected outreach entry
+            </SheetDescription>
+          </SheetHeader>
+          {selectedOutreach && (
+            <div className="mt-6 space-y-6">
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Topic</h3>
+                <p className="text-sm text-gray-600">{selectedOutreach.topic}</p>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Member</h3>
+                <p className="text-sm text-gray-600">{selectedOutreach.memberName} ({selectedOutreach.memberId})</p>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Channel:</span>
+                    <Badge variant="outline" className="ml-2">{selectedOutreach.channel}</Badge>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>
+                    <Badge variant={getStatusVariant(selectedOutreach.status)} className="ml-2">
+                      {selectedOutreach.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Team:</span>
+                    <Badge variant="outline" className="ml-2">{selectedOutreach.team}</Badge>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Purpose:</span>
+                    <Badge variant="outline" className="ml-2">{selectedOutreach.purpose}</Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Agent & Timing</h3>
+                <div className="text-sm text-gray-600">
+                  <p>Agent: {selectedOutreach.agent}</p>
+                  <p>Date: {new Date(selectedOutreach.timestamp).toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Notes</h3>
+                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  {selectedOutreach.note}
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Audit Information</h3>
+                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                  <p>Outreach ID: {selectedOutreach.id}</p>
+                  <p>Created: {new Date(selectedOutreach.timestamp).toISOString()}</p>
+                  <p>Last Modified: {new Date(selectedOutreach.timestamp).toISOString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

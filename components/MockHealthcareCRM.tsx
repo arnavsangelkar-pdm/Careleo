@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +20,8 @@ import { OutreachTab } from './OutreachTab'
 import { AnalyticsTab } from './AnalyticsTab'
 import { AuditTab } from './AuditTab'
 import { CohortsDashboard } from './cohorts/CohortsDashboard'
-import { Shield, Users, MessageSquare, BarChart3, FileText, Target } from 'lucide-react'
+import { OutreachAnalysis } from './analytics/OutreachAnalysis'
+import { Shield, Users, MessageSquare, BarChart3, FileText, Target, TrendingUp } from 'lucide-react'
 import { LoadingShimmer } from './LoadingShimmer'
 
 export default function MockHealthcareCRM() {
@@ -29,6 +31,8 @@ export default function MockHealthcareCRM() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   // Initialize mock data
   useEffect(() => {
@@ -55,6 +59,30 @@ export default function MockHealthcareCRM() {
     
     initializeData()
   }, [])
+
+  // Handle URL-based member selection
+  useEffect(() => {
+    if (members.length > 0) {
+      const memberId = searchParams.get('member')
+      if (memberId) {
+        const member = members.find(m => m.id === memberId)
+        if (member && member.id !== selectedMember?.id) {
+          setSelectedMember(member)
+        }
+      } else if (!selectedMember && members.length > 0) {
+        // Auto-select first member if no URL param and no selection
+        setSelectedMember(members[0])
+      }
+    }
+  }, [members, searchParams, selectedMember])
+
+  // Handle member selection with URL update
+  const handleSelectMember = (member: Member) => {
+    setSelectedMember(member)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('member', member.id)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }
 
   const handleAddOutreach = (data: any) => {
     const newOutreach: Outreach = {
@@ -159,7 +187,7 @@ export default function MockHealthcareCRM() {
           </div>
         ) : (
           <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Members</span>
@@ -176,6 +204,10 @@ export default function MockHealthcareCRM() {
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
             </TabsTrigger>
+            <TabsTrigger value="outreach-analysis" className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>Outreach Analysis</span>
+            </TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>Audit Trail</span>
@@ -187,9 +219,16 @@ export default function MockHealthcareCRM() {
               members={members}
               outreach={outreach}
               selectedMember={selectedMember}
-              onSelectMember={setSelectedMember}
+              onSelectMember={handleSelectMember}
               onAddOutreach={handleAddOutreach}
               onMemberAction={handleMemberAction}
+              onNavigateToOutreach={(filters) => {
+                const params = new URLSearchParams()
+                Object.entries(filters).forEach(([key, value]) => {
+                  params.set(key, value)
+                })
+                router.replace(`?tab=outreach&${params.toString()}`, { scroll: false })
+              }}
             />
           </TabsContent>
 
@@ -198,6 +237,13 @@ export default function MockHealthcareCRM() {
               outreach={outreach}
               members={members}
               onAddOutreach={handleAddOutreach}
+              onNavigateToOutreach={(filters) => {
+                const params = new URLSearchParams()
+                Object.entries(filters).forEach(([key, value]) => {
+                  params.set(key, value)
+                })
+                router.replace(`?tab=outreach&${params.toString()}`, { scroll: false })
+              }}
             />
           </TabsContent>
 
@@ -213,6 +259,21 @@ export default function MockHealthcareCRM() {
             <AnalyticsTab
               outreach={outreach}
               members={members}
+            />
+          </TabsContent>
+
+          <TabsContent value="outreach-analysis" className="space-y-6">
+            <OutreachAnalysis
+              outreach={outreach}
+              members={members}
+              onNavigateToOutreach={(filters) => {
+                // Navigate to outreach tab with filters
+                const params = new URLSearchParams()
+                Object.entries(filters).forEach(([key, value]) => {
+                  params.set(key, value)
+                })
+                router.replace(`?tab=outreach&${params.toString()}`, { scroll: false })
+              }}
             />
           </TabsContent>
 

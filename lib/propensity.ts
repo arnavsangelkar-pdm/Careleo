@@ -28,6 +28,8 @@ function getMemberAge(dob: string): number {
 // Helper function to check if member has relevant condition for purpose
 function hasRelevantCondition(member: Member, purpose: Purpose): boolean {
   const conditionMap: Record<Purpose, string[]> = {
+    'HRA Completion': [], // All members eligible for HRA
+    'HRA Reminder': [], // All members eligible for HRA
     'HEDIS - A1c': ['Diabetes'],
     'HEDIS - Mammogram': [], // Will check age and gender separately
     'AWV': [], // All members eligible

@@ -1,6 +1,9 @@
 // Data generators for the Insurer CRM
 // Deterministic data generation for consistent results
 
+import type { PlanInfo } from './types'
+import { LOB } from './constants'
+
 export interface Member {
   id: string
   name: string
@@ -12,6 +15,7 @@ export interface Member {
   address: string
   conditions: string[]
   risk: number // 0-100
+  planInfo: PlanInfo // New field for health plan contract details
   sdoh?: import('./types').MemberSdohProfile
 }
 
@@ -26,7 +30,7 @@ export interface Outreach {
   agent: string
   note: string
   team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships'
-  purpose: 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
+  purpose: 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
 }
 
 export interface AuditEntry {
@@ -57,7 +61,7 @@ function seededRandom(seed: number): () => number {
 const random = seededRandom(SEED)
 
 // Helper functions
-function randomChoice<T>(arr: T[]): T {
+function randomChoice<T>(arr: readonly T[]): T {
   return arr[Math.floor(random() * arr.length)]
 }
 
@@ -84,14 +88,20 @@ const LAST_NAMES = [
   'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'
 ]
 
-const PLANS = [
-  'Premium Health Plus', 'Standard Care', 'Basic Coverage', 'Family Plan',
-  'Senior Advantage', 'HMO Select', 'PPO Gold', 'Medicare Supplement'
+const PLAN_NAMES = [
+  'PDM Care Advantage (HMO)', 'PDM Care Plus (PPO)', 'PDM Care Select (HMO)', 
+  'PDM Care Premier (PPO)', 'PDM Care Basic (HMO)', 'PDM Care Elite (PPO)',
+  'PDM Care Standard (HMO)', 'PDM Care Premium (PPO)'
 ]
 
 const VENDORS = [
   'BlueCross BlueShield', 'Aetna', 'Cigna', 'UnitedHealth', 'Humana',
   'Kaiser Permanente', 'Anthem', 'Molina Healthcare'
+]
+
+const COUNTIES = [
+  'Los Angeles', 'Orange', 'San Diego', 'Riverside', 'San Bernardino',
+  'Santa Clara', 'Alameda', 'Sacramento', 'Contra Costa', 'Fresno'
 ]
 
 const CONDITIONS = [
@@ -116,8 +126,9 @@ const TEAMS = [
 ]
 
 const PURPOSES = [
-  'AWV', 'HEDIS - A1c', 'HEDIS - Mammogram', 'Medication Adherence',
-  'RAF/Chart Retrieval', 'Care Transition Follow-up', 'SDOH—Food', 'SDOH—Transport', 'SDOH—Utilities', 'SDOH—BH'
+  'HRA Completion', 'HRA Reminder', 'AWV', 'HEDIS - A1c', 'HEDIS - Mammogram', 
+  'Medication Adherence', 'RAF/Chart Retrieval', 'Care Transition Follow-up', 
+  'SDOH—Food', 'SDOH—Transport', 'SDOH—Utilities', 'SDOH—BH'
 ]
 
 // Generate mock members
@@ -150,17 +161,38 @@ export function generateMockMembers(count: number = 50): Member[] {
     let risk = Math.min(20 + age * 0.5 + conditions.length * 15, 100)
     risk = Math.max(risk + randomInt(-10, 10), 0)
     
+    // Generate realistic Medicare Advantage plan info
+    const contractId = `H${String(randomInt(1000, 9999))}`
+    const pbp = String(randomInt(1, 199)).padStart(3, '0')
+    const planName = randomChoice(PLAN_NAMES)
+    const lob = randomChoice(LOB) // Skewed to Medicare Advantage for demo
+    const county = randomChoice(COUNTIES)
+    
+    // Generate effective date (within last 2 years)
+    const effectiveDate = new Date()
+    effectiveDate.setFullYear(effectiveDate.getFullYear() - randomInt(0, 2))
+    effectiveDate.setMonth(randomInt(0, 11))
+    effectiveDate.setDate(randomInt(1, 28))
+    
     members.push({
       id: `M${String(i + 1).padStart(4, '0')}`,
       name,
       dob: dob.toISOString().split('T')[0],
-      plan: randomChoice(PLANS),
+      plan: planName, // Keep for backward compatibility
       vendor: randomChoice(VENDORS),
       phone: `(${randomInt(200, 999)}) ${randomInt(200, 999)}-${randomInt(1000, 9999)}`,
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
       address: `${randomInt(100, 9999)} ${randomChoice(['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln', 'Maple Dr'])}`,
       conditions,
-      risk: Math.round(risk)
+      risk: Math.round(risk),
+      planInfo: {
+        contractId,
+        pbp,
+        lob,
+        planName,
+        county,
+        effectiveDate: effectiveDate.toISOString()
+      }
     })
   }
   
@@ -188,25 +220,47 @@ export function generateMockOutreach(members: Member[], count: number = 100): Ou
       new Date()
     )
     
+    // Bias toward HRA purposes (60-70% weight)
+    const isHra = random() < 0.65
+    const purpose = isHra 
+      ? randomChoice(['HRA Completion', 'HRA Reminder'])
+      : randomChoice(PURPOSES.filter(p => !p.startsWith('HRA')))
+    
+    // Bias team selection based on purpose
+    const team = purpose.startsWith('HRA') 
+      ? randomChoice(['Quality', 'Member Services'])
+      : randomChoice(TEAMS)
+    
     outreach.push({
       id: `O${String(i + 1).padStart(4, '0')}`,
       memberId: member.id,
       memberName: member.name,
       channel: randomChoice(['Call', 'SMS', 'Email', 'Portal']),
       status: randomChoice(['Planned', 'In-Progress', 'Completed', 'Failed']),
-      topic: randomChoice(TOPICS),
+      topic: purpose.startsWith('HRA') 
+        ? `Health Risk Assessment - ${purpose === 'HRA Completion' ? 'Follow-up' : 'Reminder'}`
+        : randomChoice(TOPICS),
       timestamp,
       agent: randomChoice(AGENTS),
-      note: `Outreach regarding ${randomChoice(TOPICS).toLowerCase()}. ${randomChoice([
-        'Member was responsive and engaged.',
-        'Left voicemail, no response yet.',
-        'Member requested callback.',
-        'Completed successfully.',
-        'Member declined to participate.',
-        'Technical issues encountered.'
-      ])}`,
-      team: randomChoice(TEAMS) as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
-      purpose: randomChoice(PURPOSES) as 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
+      note: purpose.startsWith('HRA') 
+        ? `HRA outreach: ${purpose === 'HRA Completion' ? 'Following up on incomplete assessment' : 'Reminding member to complete assessment'}. ${randomChoice([
+          'Member was responsive and engaged.',
+          'Left voicemail, no response yet.',
+          'Member requested callback.',
+          'Completed successfully.',
+          'Member declined to participate.',
+          'Technical issues encountered.'
+        ])}`
+        : `Outreach regarding ${randomChoice(TOPICS).toLowerCase()}. ${randomChoice([
+          'Member was responsive and engaged.',
+          'Left voicemail, no response yet.',
+          'Member requested callback.',
+          'Completed successfully.',
+          'Member declined to participate.',
+          'Technical issues encountered.'
+        ])}`,
+      team: team as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
+      purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
     })
   }
   
@@ -259,7 +313,11 @@ export function searchMembers(members: Member[], query: string): Member[] {
     member.id.toLowerCase().includes(lowercaseQuery) ||
     member.email.toLowerCase().includes(lowercaseQuery) ||
     member.plan.toLowerCase().includes(lowercaseQuery) ||
-    member.vendor.toLowerCase().includes(lowercaseQuery)
+    member.vendor.toLowerCase().includes(lowercaseQuery) ||
+    member.planInfo.contractId.toLowerCase().includes(lowercaseQuery) ||
+    member.planInfo.pbp.toLowerCase().includes(lowercaseQuery) ||
+    member.planInfo.planName.toLowerCase().includes(lowercaseQuery) ||
+    member.planInfo.lob.toLowerCase().includes(lowercaseQuery)
   )
 }
 
