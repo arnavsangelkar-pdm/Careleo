@@ -45,7 +45,8 @@ const teamColors = {
   'Quality': 'bg-blue-100 text-blue-800',
   'Member Services': 'bg-green-100 text-green-800',
   'Case Management': 'bg-orange-100 text-orange-800',
-  'Pharmacy': 'bg-pink-100 text-pink-800'
+  'Pharmacy': 'bg-pink-100 text-pink-800',
+  'Community Partnerships': 'bg-teal-100 text-teal-800'
 }
 
 export function OutreachTimeline({ member, outreach }: OutreachTimelineProps) {
@@ -312,7 +313,10 @@ export function OutreachTimeline({ member, outreach }: OutreachTimelineProps) {
                               <Badge className={`${teamColors[entry.team]} text-xs`}>
                                 {entry.team}
                               </Badge>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge 
+                                variant={entry.purpose.startsWith('SDOH') ? 'secondary' : 'outline'} 
+                                className={`text-xs ${entry.purpose.startsWith('SDOH') ? 'bg-teal-50 text-teal-700 border-teal-200' : ''}`}
+                              >
                                 {entry.purpose}
                               </Badge>
                             </div>

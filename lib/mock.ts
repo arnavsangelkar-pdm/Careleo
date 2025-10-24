@@ -12,6 +12,7 @@ export interface Member {
   address: string
   conditions: string[]
   risk: number // 0-100
+  sdoh?: import('./types').MemberSdohProfile
 }
 
 export interface Outreach {
@@ -24,8 +25,8 @@ export interface Outreach {
   timestamp: string
   agent: string
   note: string
-  team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy'
-  purpose: 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up'
+  team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships'
+  purpose: 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
 }
 
 export interface AuditEntry {
@@ -111,12 +112,12 @@ const TOPICS = [
 ]
 
 const TEAMS = [
-  'Risk Adjustment', 'Quality', 'Member Services', 'Case Management', 'Pharmacy'
+  'Risk Adjustment', 'Quality', 'Member Services', 'Case Management', 'Pharmacy', 'Community Partnerships'
 ]
 
 const PURPOSES = [
   'AWV', 'HEDIS - A1c', 'HEDIS - Mammogram', 'Medication Adherence',
-  'RAF/Chart Retrieval', 'Care Transition Follow-up'
+  'RAF/Chart Retrieval', 'Care Transition Follow-up', 'SDOH—Food', 'SDOH—Transport', 'SDOH—Utilities', 'SDOH—BH'
 ]
 
 // Generate mock members
@@ -166,6 +167,16 @@ export function generateMockMembers(count: number = 50): Member[] {
   return members
 }
 
+// Generate SDOH profiles for members (called after outreach generation)
+export function addSdohProfiles(members: Member[], outreach: Outreach[]): Member[] {
+  const { generateSdohProfile } = require('./sdoh')
+  
+  return members.map(member => ({
+    ...member,
+    sdoh: generateSdohProfile(member, outreach)
+  }))
+}
+
 // Generate mock outreach entries
 export function generateMockOutreach(members: Member[], count: number = 100): Outreach[] {
   const outreach: Outreach[] = []
@@ -194,8 +205,8 @@ export function generateMockOutreach(members: Member[], count: number = 100): Ou
         'Member declined to participate.',
         'Technical issues encountered.'
       ])}`,
-      team: randomChoice(TEAMS) as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy',
-      purpose: randomChoice(PURPOSES) as 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up'
+      team: randomChoice(TEAMS) as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
+      purpose: randomChoice(PURPOSES) as 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
     })
   }
   

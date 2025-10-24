@@ -6,7 +6,8 @@ export const TEAMS = [
   'Quality', 
   'Member Services',
   'Case Management',
-  'Pharmacy'
+  'Pharmacy',
+  'Community Partnerships'
 ] as const
 
 export const PURPOSES = [
@@ -15,7 +16,11 @@ export const PURPOSES = [
   'HEDIS - Mammogram', 
   'Medication Adherence',
   'RAF/Chart Retrieval',
-  'Care Transition Follow-up'
+  'Care Transition Follow-up',
+  'SDOH—Food',
+  'SDOH—Transport',
+  'SDOH—Utilities',
+  'SDOH—BH'
 ] as const
 
 export const CHANNELS = [
@@ -56,3 +61,14 @@ export type Team = typeof TEAMS[number]
 export type Purpose = typeof PURPOSES[number] 
 export type Channel = typeof CHANNELS[number]
 export type Status = typeof STATUS[number]
+
+// SDOH Constants
+export const SDOH_NEEDS = [
+  'Food',
+  'Housing', 
+  'Transportation',
+  'Utilities',
+  'Behavioral Health'
+] as const
+
+export type SdohNeed = typeof SDOH_NEEDS[number]

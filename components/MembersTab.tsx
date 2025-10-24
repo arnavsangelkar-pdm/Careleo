@@ -19,6 +19,7 @@ import {
   type Member,
   type Outreach
 } from '@/lib/mock'
+import { preferChannelFor } from '@/lib/sdoh'
 import { 
   Search, 
   Phone, 
@@ -28,7 +29,15 @@ import {
   User,
   Shield,
   Activity,
-  Filter
+  Filter,
+  Heart,
+  Home,
+  Car,
+  Zap,
+  Brain,
+  MapPin,
+  Wifi,
+  Globe
 } from 'lucide-react'
 
 interface MembersTabProps {
@@ -328,6 +337,126 @@ export function MembersTab({
                   )}
                 </CardContent>
               </Card>
+
+              {/* SDOH & Context Card */}
+              {selectedMember.sdoh && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Heart className="h-5 w-5" />
+                      <span>SDOH & Context</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Social Risk Meter */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Social Risk Score</label>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${
+                              selectedMember.sdoh.socialRiskScore <= 40 ? 'bg-green-500' :
+                              selectedMember.sdoh.socialRiskScore <= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${selectedMember.sdoh.socialRiskScore}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedMember.sdoh.socialRiskScore}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Top 2 Needs */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Top Needs</label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Object.entries(selectedMember.sdoh.needs)
+                          .sort(([,a], [,b]) => b - a)
+                          .slice(0, 2)
+                          .map(([need, score]) => {
+                            const icons = { food: Heart, housing: Home, transportation: Car, utilities: Zap, behavioralHealth: Brain }
+                            const Icon = icons[need as keyof typeof icons]
+                            return (
+                              <Badge key={need} variant="secondary" className="text-xs flex items-center space-x-1">
+                                <Icon className="h-3 w-3" />
+                                <span>{need === 'behavioralHealth' ? 'BH' : need.charAt(0).toUpperCase() + need.slice(1)}</span>
+                                <span>({score})</span>
+                              </Badge>
+                            )
+                          })}
+                      </div>
+                    </div>
+
+                    {/* Area Context */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Area Context</label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <div className="flex items-center space-x-1 text-xs">
+                          <MapPin className="h-3 w-3 text-gray-400" />
+                          <span>{selectedMember.sdoh.areaContext.zipCode}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs">
+                          <span>ADI: {selectedMember.sdoh.areaContext.adi}/10</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs">
+                          <span>SVI: {selectedMember.sdoh.areaContext.svi}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs">
+                          <Wifi className="h-3 w-3 text-gray-400" />
+                          <span>{selectedMember.sdoh.areaContext.broadbandAccess}%</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs col-span-2">
+                          <Globe className="h-3 w-3 text-gray-400" />
+                          <span>{selectedMember.sdoh.areaContext.primaryLanguage}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recommended Resources */}
+                    {selectedMember.sdoh.recommendedResources.length > 0 && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Recommended Resources</label>
+                        <div className="space-y-2 mt-1">
+                          {selectedMember.sdoh.recommendedResources.map((resource) => (
+                            <div key={resource.id} className="p-2 bg-gray-50 rounded text-xs">
+                              <div className="font-medium">{resource.name}</div>
+                              <div className="text-gray-600">{resource.description}</div>
+                              <div className="text-gray-500">{resource.contactInfo}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-2"
+                          onClick={() => {
+                            const topNeed = Object.entries(selectedMember.sdoh!.needs)
+                              .sort(([,a], [,b]) => b - a)[0][0]
+                            const purposeMap = {
+                              food: 'SDOH—Food',
+                              transportation: 'SDOH—Transport', 
+                              utilities: 'SDOH—Utilities',
+                              behavioralHealth: 'SDOH—BH'
+                            }
+                            onAddOutreach({
+                              memberId: selectedMember.id,
+                              memberName: selectedMember.name,
+                              channel: preferChannelFor(selectedMember),
+                              status: 'Planned',
+                              topic: `Resource Referral - ${selectedMember.sdoh!.recommendedResources[0].name}`,
+                              note: `Referral to ${selectedMember.sdoh!.recommendedResources[0].name} for ${topNeed} support`,
+                              team: 'Community Partnerships',
+                              purpose: purposeMap[topNeed as keyof typeof purposeMap] || 'SDOH—Food'
+                            })
+                          }}
+                        >
+                          Refer (Mock)
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader>

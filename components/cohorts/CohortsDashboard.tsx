@@ -26,7 +26,10 @@ import {
   Monitor,
   Send,
   CheckSquare,
-  Square
+  Square,
+  Car,
+  Zap,
+  Brain
 } from 'lucide-react'
 import type { Member, Outreach } from '@/lib/mock'
 import { generateAllCohorts, type Cohort, type CohortMember } from '@/lib/cohorts'
@@ -46,7 +49,13 @@ const cohortIcons = {
   'awv-nudge': Users,
   'negative-sentiment': AlertTriangle,
   'fatigue-risk': TrendingDown,
-  'unreached': Clock
+  'unreached': Clock,
+  'food-support': Heart,
+  'transport-support': Car,
+  'utilities-support': Zap,
+  'bh-support': Brain,
+  'nudge-receptive-awv': Users,
+  'negative-sentiment-sdoh': AlertTriangle
 }
 
 const cohortColors = {
@@ -55,7 +64,13 @@ const cohortColors = {
   'awv-nudge': 'bg-blue-100 text-blue-800 border-blue-200',
   'negative-sentiment': 'bg-red-100 text-red-800 border-red-200',
   'fatigue-risk': 'bg-orange-100 text-orange-800 border-orange-200',
-  'unreached': 'bg-gray-100 text-gray-800 border-gray-200'
+  'unreached': 'bg-gray-100 text-gray-800 border-gray-200',
+  'food-support': 'bg-amber-100 text-amber-800 border-amber-200',
+  'transport-support': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  'utilities-support': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'bh-support': 'bg-purple-100 text-purple-800 border-purple-200',
+  'nudge-receptive-awv': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'negative-sentiment-sdoh': 'bg-rose-100 text-rose-800 border-rose-200'
 }
 
 export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDashboardProps) {

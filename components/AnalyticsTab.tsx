@@ -256,6 +256,58 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
         </Card>
       </div>
 
+      {/* SDOH Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Best Channel by SDOH Need */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Best Channel by SDOH Need</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={[
+                { need: 'Food', Call: 45, SMS: 60, Email: 30, Portal: 15 },
+                { need: 'Transport', Call: 55, SMS: 40, Email: 35, Portal: 20 },
+                { need: 'Utilities', Call: 50, SMS: 35, Email: 45, Portal: 25 },
+                { need: 'BH', Call: 30, SMS: 70, Email: 50, Portal: 10 }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="need" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="Call" stackId="a" fill="#3B82F6" />
+                <Bar dataKey="SMS" stackId="a" fill="#10B981" />
+                <Bar dataKey="Email" stackId="a" fill="#F59E0B" />
+                <Bar dataKey="Portal" stackId="a" fill="#EF4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Conversion by ADI Bucket */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversion by ADI Bucket</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={[
+                { bucket: 'ADI 1-3', conversion: 85, outreach: 120 },
+                { bucket: 'ADI 4-6', conversion: 72, outreach: 95 },
+                { bucket: 'ADI 7-8', conversion: 58, outreach: 80 },
+                { bucket: 'ADI 9-10', conversion: 42, outreach: 65 }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="bucket" />
+                <YAxis />
+                <Tooltip formatter={(value, name) => [`${value}%`, name === 'conversion' ? 'Conversion Rate' : 'Outreach Count']} />
+                <Bar dataKey="conversion" fill="#8B5CF6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

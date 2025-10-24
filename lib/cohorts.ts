@@ -205,6 +205,161 @@ export function getUnreachedCohort(members: Member[], outreach: Outreach[]): Coh
   return cohortMembers
 }
 
+// SDOH Cohorts
+
+// 7. Food Support Likely cohort
+export function getFoodSupportLikelyCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    
+    if (member.sdoh && member.sdoh.needs.food >= 65) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          foodNeed: member.sdoh.needs.food,
+          socialRisk: member.sdoh.socialRiskScore,
+          recommendedResources: member.sdoh.recommendedResources.filter(r => r.type === 'Food').length
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
+// 8. Transportation Support Likely cohort
+export function getTransportationSupportLikelyCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    
+    if (member.sdoh && member.sdoh.needs.transportation >= 65) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          transportNeed: member.sdoh.needs.transportation,
+          socialRisk: member.sdoh.socialRiskScore,
+          recommendedResources: member.sdoh.recommendedResources.filter(r => r.type === 'Transportation').length
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
+// 9. Utilities Assistance Likely cohort
+export function getUtilitiesAssistanceLikelyCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    
+    if (member.sdoh && member.sdoh.needs.utilities >= 65) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          utilitiesNeed: member.sdoh.needs.utilities,
+          socialRisk: member.sdoh.socialRiskScore,
+          recommendedResources: member.sdoh.recommendedResources.filter(r => r.type === 'Utilities').length
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
+// 10. BH Support Likely cohort
+export function getBHSupportLikelyCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    
+    if (member.sdoh && member.sdoh.needs.behavioralHealth >= 65) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          bhNeed: member.sdoh.needs.behavioralHealth,
+          socialRisk: member.sdoh.socialRiskScore,
+          recommendedResources: member.sdoh.recommendedResources.filter(r => r.type === 'Behavioral Health').length
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
+// 11. Nudge-Receptive for AWV (SDOH context)
+export function getNudgeReceptiveAWVCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    const recentTouches = getOutreachInWindow(outreach, member.id, TIME_PERIODS.RECENT_TOUCHES)
+    
+    if (signals.nudgePropensity >= RISK_THRESHOLDS.NUDGE_PROPENSITY_HIGH && 
+        recentTouches.length <= 1 && 
+        member.sdoh && 
+        member.sdoh.socialRiskScore <= 60) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          nudgePropensity: signals.nudgePropensity,
+          recentTouches: recentTouches.length,
+          socialRisk: member.sdoh.socialRiskScore
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
+// 12. Negative Sentiment Risk (SDOH context)
+export function getNegativeSentimentRiskSdohCohort(members: Member[], outreach: Outreach[]): CohortMember[] {
+  const cohortMembers: CohortMember[] = []
+  
+  members.forEach(member => {
+    const signals = calculateMemberSignals(member, outreach)
+    const recentTouches = getOutreachInWindow(outreach, member.id, TIME_PERIODS.RECENT_TOUCHES)
+    
+    if (signals.negSentimentRisk >= RISK_THRESHOLDS.NEGATIVE_SENTIMENT_HIGH && 
+        recentTouches.length >= 3 &&
+        member.sdoh &&
+        member.sdoh.socialRiskScore >= 70) {
+      cohortMembers.push({
+        memberId: member.id,
+        member,
+        signals,
+        metadata: {
+          negSentimentRisk: signals.negSentimentRisk,
+          recentTouches: recentTouches.length,
+          socialRisk: member.sdoh.socialRiskScore,
+          topNeed: Object.entries(member.sdoh.needs).sort(([,a], [,b]) => b - a)[0]?.[0] || 'None'
+        }
+      })
+    }
+  })
+  
+  return cohortMembers
+}
+
 // Generate all cohorts
 export function generateAllCohorts(members: Member[], outreach: Outreach[]): Cohort[] {
   const cohorts: Cohort[] = []
@@ -281,6 +436,73 @@ export function generateAllCohorts(members: Member[], outreach: Outreach[]): Coh
     count: unreachedCohort.length,
     recommendedAction: 'Initiate welcome sequence',
     sparklineData: generateSparkline(unreachedCohort.length * 0.05, 0.8)
+  })
+  
+  // SDOH Cohorts
+  const foodCohort = getFoodSupportLikelyCohort(members, outreach)
+  cohorts.push({
+    id: 'food-support',
+    name: 'Food Support Likely',
+    description: 'Members with high food insecurity needs (≥65)',
+    members: foodCohort,
+    count: foodCohort.length,
+    recommendedAction: 'Connect with food assistance programs',
+    sparklineData: generateSparkline(foodCohort.length * 0.1, 0.3)
+  })
+  
+  const transportCohort = getTransportationSupportLikelyCohort(members, outreach)
+  cohorts.push({
+    id: 'transport-support',
+    name: 'Transportation Support Likely',
+    description: 'Members with high transportation needs (≥65)',
+    members: transportCohort,
+    count: transportCohort.length,
+    recommendedAction: 'Provide transportation assistance options',
+    sparklineData: generateSparkline(transportCohort.length * 0.08, 0.4)
+  })
+  
+  const utilitiesCohort = getUtilitiesAssistanceLikelyCohort(members, outreach)
+  cohorts.push({
+    id: 'utilities-support',
+    name: 'Utilities Assistance Likely',
+    description: 'Members with high utilities assistance needs (≥65)',
+    members: utilitiesCohort,
+    count: utilitiesCohort.length,
+    recommendedAction: 'Connect with energy assistance programs',
+    sparklineData: generateSparkline(utilitiesCohort.length * 0.12, 0.35)
+  })
+  
+  const bhCohort = getBHSupportLikelyCohort(members, outreach)
+  cohorts.push({
+    id: 'bh-support',
+    name: 'BH Support Likely',
+    description: 'Members with high behavioral health needs (≥65)',
+    members: bhCohort,
+    count: bhCohort.length,
+    recommendedAction: 'Connect with mental health resources',
+    sparklineData: generateSparkline(bhCohort.length * 0.15, 0.5)
+  })
+  
+  const nudgeReceptiveCohort = getNudgeReceptiveAWVCohort(members, outreach)
+  cohorts.push({
+    id: 'nudge-receptive-awv',
+    name: 'Nudge-Receptive for AWV',
+    description: 'High nudge propensity, low recent touches, low social risk',
+    members: nudgeReceptiveCohort,
+    count: nudgeReceptiveCohort.length,
+    recommendedAction: 'Schedule AWV with preferred channel',
+    sparklineData: generateSparkline(nudgeReceptiveCohort.length * 0.2, 0.25)
+  })
+  
+  const negativeSentimentSdohCohort = getNegativeSentimentRiskSdohCohort(members, outreach)
+  cohorts.push({
+    id: 'negative-sentiment-sdoh',
+    name: 'Negative Sentiment Risk (SDOH)',
+    description: 'High sentiment risk with SDOH context and frequent touches',
+    members: negativeSentimentSdohCohort,
+    count: negativeSentimentSdohCohort.length,
+    recommendedAction: 'Pause outreach, review SDOH support approach',
+    sparklineData: generateSparkline(negativeSentimentSdohCohort.length * 0.3, 0.7)
   })
   
   return cohorts

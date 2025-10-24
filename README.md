@@ -190,6 +190,58 @@ This system includes comprehensive compliance features:
 
 This project is licensed for healthcare organizations. Please ensure compliance with healthcare regulations and implement proper security measures for production use.
 
+## 🏥 SDOH (Social Determinants of Health) Demo
+
+### SDOH Features
+The CRM includes comprehensive SDOH capabilities to address social factors that impact health outcomes:
+
+#### Member SDOH Profiles
+- **Social Risk Score**: 0-100 scale based on member characteristics and outreach patterns
+- **Needs Assessment**: Food, Housing, Transportation, Utilities, Behavioral Health (0-100 each)
+- **Area Context**: ZIP code, ADI (Area Deprivation Index), SVI (Social Vulnerability Index), broadband access, primary language
+- **Resource Recommendations**: 2-3 mock community resources for top needs
+
+#### SDOH Cohorts
+- **Food Support Likely**: Members with high food insecurity needs (≥65)
+- **Transportation Support Likely**: Members with high transportation needs (≥65)
+- **Utilities Assistance Likely**: Members with high utilities assistance needs (≥65)
+- **BH Support Likely**: Members with high behavioral health needs (≥65)
+- **Nudge-Receptive for AWV**: High nudge propensity, low recent touches, low social risk
+- **Negative Sentiment Risk (SDOH)**: High sentiment risk with SDOH context and frequent touches
+
+#### SDOH Outreach
+- **Community Partnerships Team**: Dedicated team for SDOH outreach
+- **SDOH Purposes**: Food, Transport, Utilities, Behavioral Health outreach types
+- **Resource Referrals**: One-click referral to community resources
+- **Channel Optimization**: Preferred channels based on SDOH needs
+
+#### SDOH Analytics
+- **Best Channel by SDOH Need**: Channel effectiveness for different social needs
+- **Conversion by ADI Bucket**: Outreach success rates by area deprivation level
+
+### Ethical Considerations
+- **Demo Only**: All SDOH data is mocked and deterministic
+- **No Real PHI**: No actual patient health information is used
+- **Privacy First**: Demonstrates privacy-preserving approaches to SDOH data
+- **Community Focus**: Emphasizes connecting members with community resources
+
+## 🔒 Security & Compliance
+
+### Demo Limitations
+- **No Real Data**: All data is mocked and generated for demonstration purposes
+- **No PHI**: No Protected Health Information is used or stored
+- **No Real API Calls**: All interactions are simulated
+- **Audit Trail**: Comprehensive audit logging for compliance demonstration
+- **SDOH Privacy**: All social determinant data is synthetic and privacy-preserving
+
+### Security Features
+- HITRUST-Target compliance indicators
+- Comprehensive audit trail
+- Role-based access control simulation
+- Data encryption simulation
+- Secure session management
+- SDOH data domain tagging in audit events
+
 ## 🚀 Deployment
 
 ### Render.com Deployment

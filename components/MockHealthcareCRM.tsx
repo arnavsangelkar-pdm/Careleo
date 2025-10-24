@@ -9,6 +9,7 @@ import {
   generateMockMembers, 
   generateMockOutreach, 
   generateMockAudit,
+  addSdohProfiles,
   type Member,
   type Outreach,
   type AuditEntry
@@ -35,11 +36,14 @@ export default function MockHealthcareCRM() {
       try {
         setIsLoading(true)
         // Generate a large dataset for realistic demo
-        const mockMembers = generateMockMembers(1847)
-        const mockOutreach = generateMockOutreach(mockMembers, 1847)
+        const mockMembers = generateMockMembers(427)
+        const mockOutreach = generateMockOutreach(mockMembers, 427)
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
         
-        setMembers(mockMembers)
+        // Add SDOH profiles to members
+        const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
+        
+        setMembers(membersWithSdoh)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
         setIsLoading(false)
@@ -81,7 +85,7 @@ export default function MockHealthcareCRM() {
       timestamp: new Date().toISOString(),
       ip: '192.168.1.100',
       vendor: member?.vendor || selectedMember?.vendor || 'Demo Vendor',
-      details: `Created outreach: ${data.topic}`
+      details: `Created outreach: ${data.topic}${data.purpose?.startsWith('SDOH') ? ' (SDOH domain)' : ''}`
     }
 
     setAudit(prev => [newAudit, ...prev])
