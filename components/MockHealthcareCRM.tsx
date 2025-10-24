@@ -35,8 +35,8 @@ export default function MockHealthcareCRM() {
       try {
         setIsLoading(true)
         // Generate a large dataset for realistic demo
-        const mockMembers = generateMockMembers(100432)
-        const mockOutreach = generateMockOutreach(mockMembers, 100432)
+        const mockMembers = generateMockMembers(1847)
+        const mockOutreach = generateMockOutreach(mockMembers, 1847)
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
         
         setMembers(mockMembers)
