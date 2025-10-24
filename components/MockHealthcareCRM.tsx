@@ -17,7 +17,8 @@ import { MembersTab } from './MembersTab'
 import { OutreachTab } from './OutreachTab'
 import { AnalyticsTab } from './AnalyticsTab'
 import { AuditTab } from './AuditTab'
-import { Shield, Users, MessageSquare, BarChart3, FileText } from 'lucide-react'
+import { CohortsDashboard } from './cohorts/CohortsDashboard'
+import { Shield, Users, MessageSquare, BarChart3, FileText, Target } from 'lucide-react'
 import { LoadingShimmer } from './LoadingShimmer'
 
 export default function MockHealthcareCRM() {
@@ -25,18 +26,30 @@ export default function MockHealthcareCRM() {
   const [outreach, setOutreach] = useState<Outreach[]>([])
   const [audit, setAudit] = useState<AuditEntry[]>([])
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
   // Initialize mock data
   useEffect(() => {
-    const mockMembers = generateMockMembers(100)
-    const mockOutreach = generateMockOutreach(mockMembers, 100)
-    const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
+    const initializeData = async () => {
+      try {
+        setIsLoading(true)
+        // Generate a large dataset for realistic demo
+        const mockMembers = generateMockMembers(100432)
+        const mockOutreach = generateMockOutreach(mockMembers, 100432)
+        const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
+        
+        setMembers(mockMembers)
+        setOutreach(mockOutreach)
+        setAudit(mockAudit)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error generating mock data:', error)
+        setIsLoading(false)
+      }
+    }
     
-    setMembers(mockMembers)
-    setOutreach(mockOutreach)
-    setAudit(mockAudit)
+    initializeData()
   }, [])
 
   const handleAddOutreach = (data: any) => {
@@ -49,7 +62,9 @@ export default function MockHealthcareCRM() {
       topic: data.topic,
       timestamp: new Date().toISOString(),
       agent: 'Current User',
-      note: data.note
+      note: data.note,
+      team: data.team || 'Member Services',
+      purpose: data.purpose || 'AWV'
     }
 
     setOutreach(prev => [newOutreach, ...prev])
@@ -140,7 +155,7 @@ export default function MockHealthcareCRM() {
           </div>
         ) : (
           <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Members</span>
@@ -148,6 +163,10 @@ export default function MockHealthcareCRM() {
             <TabsTrigger value="outreach" className="flex items-center space-x-2">
               <MessageSquare className="h-4 w-4" />
               <span>Outreach</span>
+            </TabsTrigger>
+            <TabsTrigger value="cohorts" className="flex items-center space-x-2">
+              <Target className="h-4 w-4" />
+              <span>Cohorts</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
@@ -174,6 +193,14 @@ export default function MockHealthcareCRM() {
             <OutreachTab
               outreach={outreach}
               members={members}
+              onAddOutreach={handleAddOutreach}
+            />
+          </TabsContent>
+
+          <TabsContent value="cohorts" className="space-y-6">
+            <CohortsDashboard
+              members={members}
+              outreach={outreach}
               onAddOutreach={handleAddOutreach}
             />
           </TabsContent>

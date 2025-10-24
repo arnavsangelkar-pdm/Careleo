@@ -190,6 +190,64 @@ This system includes comprehensive compliance features:
 
 This project is licensed for healthcare organizations. Please ensure compliance with healthcare regulations and implement proper security measures for production use.
 
+## 🚀 Deployment
+
+### Render.com Deployment
+
+This application is ready for deployment on Render.com. Follow these steps:
+
+#### Prerequisites
+1. A GitHub account with this repository
+2. A Render.com account (free tier available)
+
+#### Deployment Steps
+
+1. **Push your code to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Prepare for Render deployment"
+   git push origin main
+   ```
+
+2. **Connect to Render:**
+   - Go to [render.com](https://render.com) and sign in
+   - Click "New +" → "Web Service"
+   - Connect your GitHub account and select this repository
+
+3. **Configure the service:**
+   - **Name:** `careleo-crm-demo` (or your preferred name)
+   - **Environment:** `Node`
+   - **Build Command:** `pnpm install && pnpm build`
+   - **Start Command:** `pnpm start`
+   - **Plan:** Free (or upgrade as needed)
+
+4. **Environment Variables (Optional):**
+   - `NODE_ENV`: `production`
+   - `NEXT_TELEMETRY_DISABLED`: `1`
+
+5. **Deploy:**
+   - Click "Create Web Service"
+   - Render will automatically build and deploy your application
+   - Your app will be available at `https://your-app-name.onrender.com`
+
+#### Alternative: Using render.yaml
+The project includes a `render.yaml` file for automatic configuration:
+- Simply connect your GitHub repository to Render
+- Render will automatically detect and use the configuration
+
+#### Post-Deployment
+- Your demo CRM will be live and accessible
+- All features work with mocked data
+- No additional setup required
+
+### Other Deployment Options
+
+This Next.js application can also be deployed to:
+- **Vercel:** `vercel --prod`
+- **Netlify:** Connect GitHub repository
+- **Railway:** `railway up`
+- **Heroku:** Use the included `package.json` scripts
+
 ## 🤝 Contributing
 
 For production implementations, please consult with healthcare compliance experts and implement proper security measures according to your organization's requirements.

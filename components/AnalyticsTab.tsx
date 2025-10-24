@@ -11,6 +11,7 @@ import {
   type Outreach,
   type Member
 } from '@/lib/mock'
+import { TEAMS, PURPOSES } from '@/lib/constants'
 import { 
   BarChart, 
   Bar, 
@@ -35,6 +36,18 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
   const channelData = getOutreachByChannel(outreach)
   const responseRateData = getResponseRateData(outreach)
   const funnelData = getFunnelData(outreach)
+
+  // Team analytics
+  const teamData = TEAMS.map(team => ({
+    team,
+    count: outreach.filter(o => o.team === team).length
+  }))
+
+  // Purpose analytics
+  const purposeData = PURPOSES.map(purpose => ({
+    purpose,
+    count: outreach.filter(o => o.purpose === purpose).length
+  }))
 
   // Calculate additional metrics
   const totalMembers = members.length
@@ -178,6 +191,61 @@ export function AnalyticsTab({ outreach, members }: AnalyticsTabProps) {
                     { name: 'Medium Risk (41-70)', value: members.filter(m => m.risk > 40 && m.risk <= 70).length },
                     { name: 'High Risk (71-100)', value: members.filter(m => m.risk > 70).length }
                   ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Team and Purpose Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Touches by Team (30d) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Touches by Team (30d)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={teamData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="team" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8B5CF6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Purpose Mix (30d) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Purpose Mix (30d)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={purposeData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ purpose, percent }) => `${purpose}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {purposeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

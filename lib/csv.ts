@@ -86,3 +86,8 @@ export function formatMembersForCSV(memberEntries: any[]) {
     'Risk Score': member.risk
   }))
 }
+
+// Generic CSV export function
+export function exportToCSV(data: any[], filename: string) {
+  downloadCSV(data, filename)
+}

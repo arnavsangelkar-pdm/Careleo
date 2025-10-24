@@ -11,6 +11,7 @@ import { SectionTitle } from './SectionTitle'
 import { Stat } from './Stat'
 import { MockActionButton } from './MockActionButton'
 import { MockQuickAdd } from './MockQuickAdd'
+import { OutreachTimeline } from './member/OutreachTimeline'
 import { 
   searchMembers, 
   getRiskBadgeVariant, 
@@ -267,7 +268,7 @@ export function MembersTab({
         {/* Member Profile */}
         <div className="lg:col-span-1">
           {selectedMember ? (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-full overflow-hidden">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -369,39 +370,17 @@ export function MembersTab({
                 </CardContent>
               </Card>
 
-              {selectedMemberOutreach.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5" />
-                      <span>Recent Outreach</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedMemberOutreach.map((entry) => (
-                        <div key={entry.id} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline" className="text-xs">
-                                {entry.channel}
-                              </Badge>
-                              <Badge variant={entry.status === 'Completed' ? 'default' : 'secondary'} className="text-xs">
-                                {entry.status}
-                              </Badge>
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {new Date(entry.timestamp).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium mt-1">{entry.topic}</p>
-                          <p className="text-xs text-gray-600 mt-1">{entry.note}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Calendar className="h-5 w-5" />
+                    <span>Outreach Timeline</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-hidden">
+                  <OutreachTimeline member={selectedMember} outreach={outreach} />
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <Card>

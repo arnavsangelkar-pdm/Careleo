@@ -24,6 +24,8 @@ export interface Outreach {
   timestamp: string
   agent: string
   note: string
+  team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy'
+  purpose: 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up'
 }
 
 export interface AuditEntry {
@@ -108,6 +110,15 @@ const TOPICS = [
   'Health Assessment', 'Care Coordination', 'Disease Management'
 ]
 
+const TEAMS = [
+  'Risk Adjustment', 'Quality', 'Member Services', 'Case Management', 'Pharmacy'
+]
+
+const PURPOSES = [
+  'AWV', 'HEDIS - A1c', 'HEDIS - Mammogram', 'Medication Adherence',
+  'RAF/Chart Retrieval', 'Care Transition Follow-up'
+]
+
 // Generate mock members
 export function generateMockMembers(count: number = 50): Member[] {
   const members: Member[] = []
@@ -182,7 +193,9 @@ export function generateMockOutreach(members: Member[], count: number = 100): Ou
         'Completed successfully.',
         'Member declined to participate.',
         'Technical issues encountered.'
-      ])}`
+      ])}`,
+      team: randomChoice(TEAMS) as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy',
+      purpose: randomChoice(PURPOSES) as 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up'
     })
   }
   
