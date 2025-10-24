@@ -1,6 +1,8 @@
 // Type definitions for the Careleo CRM demo
 // All data and actions are mocked for demonstration purposes
 
+import type { Outreach } from './mock'
+
 export interface MemberSdohProfile {
   socialRiskScore: number // 0-100
   needs: {
