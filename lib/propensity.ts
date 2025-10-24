@@ -33,7 +33,11 @@ function hasRelevantCondition(member: Member, purpose: Purpose): boolean {
     'AWV': [], // All members eligible
     'Medication Adherence': ['Diabetes', 'Hypertension', 'Heart Disease', 'High Cholesterol'],
     'RAF/Chart Retrieval': ['Diabetes', 'Hypertension', 'Heart Disease', 'COPD', 'Depression'],
-    'Care Transition Follow-up': ['Heart Disease', 'COPD', 'Diabetes']
+    'Care Transition Follow-up': ['Heart Disease', 'COPD', 'Diabetes'],
+    'SDOH—Food': [], // All members potentially eligible
+    'SDOH—Transport': [], // All members potentially eligible
+    'SDOH—Utilities': [], // All members potentially eligible
+    'SDOH—BH': ['Depression', 'Anxiety'] // Members with mental health conditions
   }
   
   const relevantConditions = conditionMap[purpose] || []
