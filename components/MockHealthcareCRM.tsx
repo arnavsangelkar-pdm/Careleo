@@ -27,7 +27,7 @@ export default function MockHealthcareCRM() {
   const [members, setMembers] = useState<Member[]>([])
   const [outreach, setOutreach] = useState<Outreach[]>([])
   const [audit, setAudit] = useState<AuditEntry[]>([])
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
   const searchParams = useSearchParams()
@@ -59,28 +59,35 @@ export default function MockHealthcareCRM() {
     initializeData()
   }, [])
 
-  // Handle URL-based member selection - disabled to prevent conflicts
+  // Handle URL-based member selection and initial member selection
   useEffect(() => {
-    if (members.length > 0 && !selectedMember) {
-      // Only auto-select first member on initial load
-      console.log('Auto-selecting first member:', members[0].name, members[0].id)
-      setSelectedMember(members[0])
+    if (members.length > 0) {
+      const memberIdFromUrl = searchParams.get('member')
+      if (memberIdFromUrl && members.some(m => m.id === memberIdFromUrl)) {
+        // URL has a valid member ID, use it
+        setSelectedMemberId(memberIdFromUrl)
+      } else if (!selectedMemberId) {
+        // No URL member or invalid member, auto-select first member
+        console.log('Auto-selecting first member:', members[0].name, members[0].id)
+        setSelectedMemberId(members[0].id)
+      }
     }
-  }, [members])
+  }, [members, searchParams, selectedMemberId])
 
   // Handle member selection with URL update
-  const handleSelectMember = (member: Member, index?: number) => {
-    setSelectedMember(member)
-    // Temporarily disable URL update to test member selection
-    // const params = new URLSearchParams(searchParams.toString())
-    // params.set('member', member.id)
-    // router.replace(`?${params.toString()}`, { scroll: false })
+  const handleSelectMember = (memberId: string) => {
+    setSelectedMemberId(memberId)
+    // Update URL with member ID
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('member', memberId)
+    router.replace(`?${params.toString()}`, { scroll: false })
   }
 
   const handleAddOutreach = (data: any) => {
+    const selectedMember = members.find(m => m.id === selectedMemberId)
     const newOutreach: Outreach = {
       id: `O${String(outreach.length + 1).padStart(4, '0')}`,
-      memberId: data.memberId || selectedMember?.id || 'M0001',
+      memberId: data.memberId || selectedMemberId || 'M0001',
       memberName: data.memberName || selectedMember?.name || 'Demo Member',
       channel: data.channel,
       status: data.status,
@@ -205,7 +212,7 @@ export default function MockHealthcareCRM() {
             <MembersTab
               members={members}
               outreach={outreach}
-              selectedMember={selectedMember}
+              selectedMemberId={selectedMemberId}
               onSelectMember={handleSelectMember}
               onAddOutreach={handleAddOutreach}
               onMemberAction={handleMemberAction}

@@ -39,7 +39,8 @@ import {
 } from 'lucide-react'
 
 interface MemberProfileProps {
-  member: Member | null
+  members: Member[]
+  selectedMemberId: string | null
   outreach: Outreach[]
   onAddOutreach: (data: any) => void
   onMemberAction: (action: string, member: Member) => void
@@ -47,12 +48,19 @@ interface MemberProfileProps {
 }
 
 export function MemberProfile({
-  member,
+  members,
+  selectedMemberId,
   outreach,
   onAddOutreach,
   onMemberAction,
   isMobile = false
 }: MemberProfileProps) {
+  
+  // Derive member from selectedMemberId
+  const member = React.useMemo(
+    () => members.find(m => m.id === selectedMemberId) ?? null,
+    [members, selectedMemberId]
+  )
   const profileRef = useRef<HTMLDivElement>(null)
 
   // Focus management for accessibility
@@ -126,17 +134,13 @@ export function MemberProfile({
 
   if (!member || !memberData) {
     return (
-      <Card className="h-full">
-        <CardContent className="p-8 text-center flex items-center justify-center h-full">
-          <div>
-            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Member</h3>
-            <p className="text-sm text-gray-500">
-              Choose a member from the directory to view their profile and manage outreach.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        <div className="text-center">
+          <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-medium">Select a member</p>
+          <p className="text-sm">Choose a member from the directory to view their profile</p>
+        </div>
+      </div>
     )
   }
 

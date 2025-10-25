@@ -19,14 +19,14 @@ import {
 
 interface MemberDirectoryProps {
   members: Member[]
-  selectedMember: Member | null
-  onSelectMember: (member: Member, index?: number) => void
+  selectedMemberId: string | null
+  onSelectMember: (memberId: string, index?: number) => void
   isMobile?: boolean
 }
 
 export function MemberDirectory({
   members,
-  selectedMember,
+  selectedMemberId,
   onSelectMember,
   isMobile = false
 }: MemberDirectoryProps) {
@@ -76,20 +76,15 @@ export function MemberDirectory({
 
   // Debug: Log filtered members (removed to prevent infinite loops)
 
-  // Handle URL-based member selection
+  // Update active index when selectedMemberId changes
   useEffect(() => {
-    const memberId = searchParams.get('member')
-    if (memberId) {
-      const member = members.find(m => m.id === memberId)
-      if (member) {
-        const index = filteredMembers.findIndex(m => m.id === memberId)
-        onSelectMember(member, index >= 0 ? index : undefined)
-        if (index >= 0) setActiveIndex(index)
+    if (selectedMemberId) {
+      const index = filteredMembers.findIndex(m => m.id === selectedMemberId)
+      if (index >= 0) {
+        setActiveIndex(index)
       }
-    } else if (!selectedMember && filteredMembers.length > 0) {
-      onSelectMember(filteredMembers[0], 0)
     }
-  }, [searchParams, members, filteredMembers, selectedMember, onSelectMember])
+  }, [selectedMemberId, filteredMembers])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (filteredMembers.length === 0) return
@@ -107,7 +102,7 @@ export function MemberDirectory({
       case ' ':
         e.preventDefault()
         if (filteredMembers[activeIndex]) {
-          onSelectMember(filteredMembers[activeIndex], activeIndex)
+          onSelectMember(filteredMembers[activeIndex].id, activeIndex)
         }
         break
       case 'Home':
@@ -131,8 +126,8 @@ export function MemberDirectory({
     }
   }, [activeIndex])
 
-  const handleMemberClick = (member: Member, index: number) => {
-    onSelectMember(member, index)
+  const handleMemberClick = (memberId: string, index: number) => {
+    onSelectMember(memberId, index)
   }
 
   return (
@@ -215,7 +210,7 @@ export function MemberDirectory({
               id={member.id}
               data-member-index={index}
               className={`p-4 rounded-lg border cursor-pointer ${
-                selectedMember?.id === member.id
+                selectedMemberId === member.id
                   ? 'border-blue-500 bg-blue-50'
                   : activeIndex === index
                   ? 'border-blue-300 bg-blue-50'
@@ -223,10 +218,10 @@ export function MemberDirectory({
               }`}
               onClick={(e) => {
                 e.stopPropagation()
-                handleMemberClick(member, index)
+                handleMemberClick(member.id, index)
               }}
               role="option"
-              aria-selected={selectedMember?.id === member.id}
+              aria-selected={selectedMemberId === member.id}
               aria-label={`Select member ${member.name}`}
             >
               <div className="flex items-center justify-between">

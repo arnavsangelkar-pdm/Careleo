@@ -16,8 +16,8 @@ import {
 interface MembersTabProps {
   members: Member[]
   outreach: Outreach[]
-  selectedMember: Member | null
-  onSelectMember: (member: Member, index?: number) => void
+  selectedMemberId: string | null
+  onSelectMember: (memberId: string) => void
   onAddOutreach: (data: any) => void
   onMemberAction: (action: string, member: Member) => void
   onNavigateToOutreach?: (filters: Record<string, string>) => void
@@ -26,7 +26,7 @@ interface MembersTabProps {
 export function MembersTab({
   members,
   outreach,
-  selectedMember,
+  selectedMemberId,
   onSelectMember,
   onAddOutreach,
   onMemberAction,
@@ -51,8 +51,8 @@ export function MembersTab({
   }, [])
 
   // Handle member selection with mobile sheet
-  const handleSelectMember = (member: Member, index?: number) => {
-    onSelectMember(member, index)
+  const handleSelectMember = (memberId: string, index?: number) => {
+    onSelectMember(memberId)
     if (index !== undefined) {
       setFocusedMemberIndex(index)
     }
@@ -76,6 +76,7 @@ export function MembersTab({
   }
 
   const handleActionClick = (action: string) => {
+    const selectedMember = members.find(m => m.id === selectedMemberId)
     if (selectedMember) {
       setSelectedAction(action)
       setActionDialogOpen(true)
@@ -83,6 +84,7 @@ export function MembersTab({
   }
 
   const handleActionConfirm = () => {
+    const selectedMember = members.find(m => m.id === selectedMemberId)
     if (selectedMember) {
       onMemberAction(selectedAction, selectedMember)
       setActionDialogOpen(false)
@@ -127,14 +129,15 @@ export function MembersTab({
           <div ref={directoryRef} className="col-span-4">
             <MemberDirectory
               members={members}
-              selectedMember={selectedMember}
+              selectedMemberId={selectedMemberId}
               onSelectMember={handleSelectMember}
               isMobile={isMobile}
             />
           </div>
           <div className="col-span-6">
             <MemberProfile
-              member={selectedMember}
+              members={members}
+              selectedMemberId={selectedMemberId}
               outreach={outreach}
               onAddOutreach={onAddOutreach}
               onMemberAction={handleActionClick}
@@ -146,7 +149,7 @@ export function MembersTab({
         <div ref={directoryRef}>
           <MemberDirectory
             members={members}
-            selectedMember={selectedMember}
+            selectedMemberId={selectedMemberId}
             onSelectMember={handleSelectMember}
             isMobile={isMobile}
           />
@@ -161,7 +164,8 @@ export function MembersTab({
           </SheetHeader>
           <div className="mt-6 h-[calc(100vh-8rem)] overflow-y-auto">
             <MemberProfile
-              member={selectedMember}
+              members={members}
+              selectedMemberId={selectedMemberId}
               outreach={outreach}
               onAddOutreach={onAddOutreach}
               onMemberAction={handleActionClick}
@@ -177,7 +181,7 @@ export function MembersTab({
           <DialogHeader>
             <DialogTitle>Confirm Action</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {selectedAction.replace('_', ' ').toLowerCase()} for {selectedMember?.name}?
+              Are you sure you want to {selectedAction.replace('_', ' ').toLowerCase()} for {members.find(m => m.id === selectedMemberId)?.name}?
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
