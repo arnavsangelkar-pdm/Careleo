@@ -126,6 +126,7 @@ export function MemberDirectory({
   }, [activeIndex])
 
   const handleMemberClick = (member: Member, index: number) => {
+    console.log('Member clicked:', member.name, member.id)
     onSelectMember(member, index)
   }
 

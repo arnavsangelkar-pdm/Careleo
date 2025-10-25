@@ -38,15 +38,15 @@ export default function MockHealthcareCRM() {
     const initializeData = async () => {
       try {
         setIsLoading(true)
-        // Generate 137 members with 3-4 outreach each (realistic dataset)
-        const mockMembers = generateMockMembers(137)
-        const mockOutreach = generateMockOutreach(mockMembers, 450) // ~3.3 outreach per member
-        const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
+        // Generate moderate dataset for fast loading with full functionality
+        const mockMembers = generateMockMembers(50)
+        const mockOutreach = generateMockOutreach(mockMembers, 150) // ~3 outreach per member
+        const mockAudit = generateMockAudit(mockMembers, mockOutreach, 75)
         
-        // Add SDOH profiles to members
-        const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
+        // Add SDOH profiles to members (temporarily disabled for faster loading)
+        // const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
         
-        setMembers(membersWithSdoh)
+        setMembers(mockMembers)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
         setIsLoading(false)
@@ -77,6 +77,7 @@ export default function MockHealthcareCRM() {
 
   // Handle member selection with URL update
   const handleSelectMember = (member: Member) => {
+    console.log('Selecting member:', member.name, member.id)
     setSelectedMember(member)
     const params = new URLSearchParams(searchParams.toString())
     params.set('member', member.id)
