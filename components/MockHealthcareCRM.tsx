@@ -76,7 +76,8 @@ export default function MockHealthcareCRM() {
   }, [members, searchParams, selectedMember])
 
   // Handle member selection with URL update
-  const handleSelectMember = (member: Member) => {
+  const handleSelectMember = (member: Member, index?: number) => {
+    console.log('MockHealthcareCRM: handleSelectMember called with:', member.name, member.id, 'index:', index)
     setSelectedMember(member)
     const params = new URLSearchParams(searchParams.toString())
     params.set('member', member.id)

@@ -17,7 +17,7 @@ interface MembersTabProps {
   members: Member[]
   outreach: Outreach[]
   selectedMember: Member | null
-  onSelectMember: (member: Member) => void
+  onSelectMember: (member: Member, index?: number) => void
   onAddOutreach: (data: any) => void
   onMemberAction: (action: string, member: Member) => void
   onNavigateToOutreach?: (filters: Record<string, string>) => void
@@ -52,7 +52,8 @@ export function MembersTab({
 
   // Handle member selection with mobile sheet
   const handleSelectMember = (member: Member, index?: number) => {
-    onSelectMember(member)
+    console.log('MembersTab: handleSelectMember called with:', member.name, member.id, 'index:', index)
+    onSelectMember(member, index)
     if (index !== undefined) {
       setFocusedMemberIndex(index)
     }
