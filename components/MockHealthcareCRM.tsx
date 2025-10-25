@@ -154,8 +154,7 @@ export default function MockHealthcareCRM() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-blue-600" />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Careleo Healthcare CRM</h1>
-                  <p className="text-sm text-gray-500">Healthcare CRM Platform</p>
+                  <h1 className="text-xl font-bold text-gray-900">Careleo</h1>
                 </div>
               </div>
             </div>

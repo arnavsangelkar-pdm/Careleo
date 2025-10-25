@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Careleo Healthcare CRM',
+  title: 'Careleo',
   description: 'Comprehensive CRM system for healthcare organizations',
 }
 
