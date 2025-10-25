@@ -104,8 +104,8 @@ export function MembersTab({
           subtitle="Active profiles"
         />
         <Stat
-          title="High Risk"
-          value={members.filter(m => m.risk > 70).length}
+          title="High Aberration Risk"
+          value={members.filter(m => m.aberrationRisk > 70).length}
           subtitle="Requires attention"
           trend={{ value: 12, isPositive: false }}
         />

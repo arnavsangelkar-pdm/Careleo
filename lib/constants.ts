@@ -25,10 +25,12 @@ export const PURPOSES = [
   'Medication Adherence',
   'RAF/Chart Retrieval',
   'Care Transition Follow-up',
-  'SDOH—Food',
-  'SDOH—Transport',
-  'SDOH—Utilities',
-  'SDOH—BH'
+  'SDOH—Economic Instability',
+  'SDOH—Food Insecurity',
+  'SDOH—Housing and Neighborhood',
+  'SDOH—Healthcare Access',
+  'SDOH—Education',
+  'SDOH—Social and Community'
 ] as const
 
 export const CHANNELS = [
@@ -36,6 +38,11 @@ export const CHANNELS = [
   'SMS', 
   'Email',
   'Portal'
+] as const
+
+export const MEMBER_TYPES = [
+  'Member',
+  'Prospect'
 ] as const
 
 export const STATUS = [
@@ -70,14 +77,16 @@ export type Team = typeof TEAMS[number]
 export type Purpose = typeof PURPOSES[number] 
 export type Channel = typeof CHANNELS[number]
 export type Status = typeof STATUS[number]
+export type MemberType = typeof MEMBER_TYPES[number]
 
 // SDOH Constants
 export const SDOH_NEEDS = [
-  'Food',
-  'Housing', 
-  'Transportation',
-  'Utilities',
-  'Behavioral Health'
+  'Economic Instability',
+  'Food Insecurity', 
+  'Housing and Neighborhood Issues',
+  'Healthcare Access',
+  'Education',
+  'Social and Community Context'
 ] as const
 
 export type SdohNeed = typeof SDOH_NEEDS[number]

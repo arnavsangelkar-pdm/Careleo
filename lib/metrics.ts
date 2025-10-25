@@ -15,6 +15,7 @@ export interface OutreachFilter {
   channel?: string
   from?: string
   to?: string
+  memberType?: string
 }
 
 /**
@@ -32,9 +33,11 @@ export function touchesInWindow(outreach: Outreach[], days: number): number {
 
 /**
  * Calculate average touches per member within a time window
+ * Excludes Prospects from member count
  */
-export function touchesPerMember(outreach: Outreach[], memberCount: number, days: number): number {
+export function touchesPerMember(outreach: Outreach[], members: any[], days: number): number {
   const touches = touchesInWindow(outreach, days)
+  const memberCount = members.filter(m => m.memberType === 'Member').length
   return memberCount > 0 ? Math.round((touches / memberCount) * 10) / 10 : 0
 }
 
@@ -62,12 +65,17 @@ export function monthOverMonth(current: number, previous: number): MoMResult {
 /**
  * Filter outreach based on various criteria
  */
-export function filterOutreach(outreach: Outreach[], filter: OutreachFilter): Outreach[] {
+export function filterOutreach(outreach: Outreach[], filter: OutreachFilter, members?: any[]): Outreach[] {
   return outreach.filter(o => {
     if (filter.memberId && o.memberId !== filter.memberId) return false
     if (filter.team && o.team !== filter.team) return false
     if (filter.purpose && o.purpose !== filter.purpose) return false
     if (filter.channel && o.channel !== filter.channel) return false
+    
+    if (filter.memberType && members) {
+      const member = members.find(m => m.id === o.memberId)
+      if (!member || member.memberType !== filter.memberType) return false
+    }
     
     if (filter.from || filter.to) {
       const touchDate = new Date(o.timestamp)

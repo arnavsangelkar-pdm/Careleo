@@ -10,8 +10,8 @@ import { MockQuickAdd } from '../MockQuickAdd'
 // Lazy load the OutreachTimeline component for better performance
 const OutreachTimeline = lazy(() => import('./OutreachTimeline').then(module => ({ default: module.OutreachTimeline })))
 import { 
-  getRiskBadgeVariant, 
-  getRiskLabel,
+  getAberrationRiskBadgeVariant, 
+  getAberrationRiskLabel,
   type Member,
   type Outreach
 } from '@/lib/mock'
@@ -71,7 +71,7 @@ export function MemberProfile({
   // Announce member selection to screen readers
   useEffect(() => {
     if (member) {
-      const announcement = `Selected member: ${member.name}, Risk level: ${member.risk}`
+      const announcement = `Selected member: ${member.name}, Aberration Risk level: ${member.aberrationRisk}`
       // Create a live region for screen reader announcements
       const liveRegion = document.createElement('div')
       liveRegion.setAttribute('aria-live', 'polite')
@@ -101,9 +101,10 @@ export function MemberProfile({
         vendor: member.vendor,
         phone: member.phone,
         email: member.email,
-        risk: member.risk,
+        aberrationRisk: member.aberrationRisk,
         conditions: member.conditions,
-        planInfo: member.planInfo
+        planInfo: member.planInfo,
+        memberType: member.memberType
       },
       // SDOH data
       sdoh: member.sdoh ? {
@@ -142,8 +143,8 @@ export function MemberProfile({
   const { basicInfo, sdoh, memberOutreach } = memberData
 
   // Calculate member-specific metrics
-  const memberTouchpoints30d = touchesPerMember(memberOutreach, 1, 30)
-  const memberTouchpoints60d = touchesPerMember(memberOutreach, 1, 60)
+  const memberTouchpoints30d = touchesPerMember(memberOutreach, [member], 30)
+  const memberTouchpoints60d = touchesPerMember(memberOutreach, [member], 60)
   const momTouchpoints = monthOverMonth(memberTouchpoints30d, memberTouchpoints60d)
   
   const memberHraTouches30d = getHraOutreach(memberOutreach).filter(o => {
@@ -199,18 +200,16 @@ export function MemberProfile({
               <p className="text-sm">{basicInfo.dob}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Plan (HContract)</label>
-              <p className="text-sm font-medium">{basicInfo.planInfo.planName}</p>
-              <p className="text-xs text-gray-500">
-                {basicInfo.planInfo.contractId} • PBP {basicInfo.planInfo.pbp} • {basicInfo.planInfo.lob}
-              </p>
-              {basicInfo.planInfo.county && (
-                <p className="text-xs text-gray-500">County: {basicInfo.planInfo.county}</p>
-              )}
+              <label className="text-sm font-medium text-gray-600">HContract</label>
+              <p className="text-sm font-medium">{basicInfo.planInfo.contractId}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Vendor</label>
-              <p className="text-sm">{basicInfo.vendor}</p>
+              <label className="text-sm font-medium text-gray-600">PBP</label>
+              <p className="text-sm">{basicInfo.planInfo.pbp}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">Member Type</label>
+              <p className="text-sm">{basicInfo.memberType}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Contact</label>
@@ -222,11 +221,11 @@ export function MemberProfile({
           <div>
             <label className="text-sm font-medium text-gray-600">Risk Assessment</label>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge variant={getRiskBadgeVariant(basicInfo.risk)}>
-                {basicInfo.risk}
+              <Badge variant={getAberrationRiskBadgeVariant(basicInfo.aberrationRisk)}>
+                {basicInfo.aberrationRisk}
               </Badge>
               <span className="text-sm text-gray-600">
-                {getRiskLabel(basicInfo.risk)}
+                {getAberrationRiskLabel(basicInfo.aberrationRisk)}
               </span>
             </div>
           </div>
@@ -271,9 +270,9 @@ export function MemberProfile({
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{basicInfo.risk}</div>
-              <div className="text-sm text-gray-600">Risk Score</div>
-              <div className="text-xs text-gray-500">{getRiskLabel(basicInfo.risk)}</div>
+              <div className="text-2xl font-bold text-orange-600">{basicInfo.aberrationRisk}</div>
+              <div className="text-sm text-gray-600">Aberration Risk Score</div>
+              <div className="text-xs text-gray-500">{getAberrationRiskLabel(basicInfo.aberrationRisk)}</div>
             </div>
           </div>
         </CardContent>
@@ -316,12 +315,28 @@ export function MemberProfile({
                   .sort(([,a], [,b]) => b - a)
                   .slice(0, 2)
                   .map(([need, score]) => {
-                    const icons = { food: Heart, housing: Home, transportation: Car, utilities: Zap, behavioralHealth: Brain }
+                    const icons = { 
+                      economicInstability: Heart, 
+                      foodInsecurity: Heart, 
+                      housingAndNeighborhood: Home, 
+                      healthcareAccess: Heart, 
+                      education: Brain, 
+                      socialAndCommunity: Heart 
+                    }
+                    const labels = {
+                      economicInstability: 'Economic',
+                      foodInsecurity: 'Food',
+                      housingAndNeighborhood: 'Housing',
+                      healthcareAccess: 'Healthcare',
+                      education: 'Education',
+                      socialAndCommunity: 'Social'
+                    }
                     const Icon = icons[need as keyof typeof icons]
+                    const label = labels[need as keyof typeof labels]
                     return (
                       <Badge key={need} variant="secondary" className="text-xs flex items-center space-x-1">
                         <Icon className="h-3 w-3" />
-                        <span>{need === 'behavioralHealth' ? 'BH' : need.charAt(0).toUpperCase() + need.slice(1)}</span>
+                        <span>{label}</span>
                         <span>({score})</span>
                       </Badge>
                     )
@@ -374,10 +389,12 @@ export function MemberProfile({
                     const topNeed = Object.entries(sdoh.needs)
                       .sort(([,a], [,b]) => b - a)[0][0]
                     const purposeMap = {
-                      food: 'SDOH—Food',
-                      transportation: 'SDOH—Transport', 
-                      utilities: 'SDOH—Utilities',
-                      behavioralHealth: 'SDOH—BH'
+                      economicInstability: 'SDOH—Economic Instability',
+                      foodInsecurity: 'SDOH—Food Insecurity',
+                      housingAndNeighborhood: 'SDOH—Housing and Neighborhood',
+                      healthcareAccess: 'SDOH—Healthcare Access',
+                      education: 'SDOH—Education',
+                      socialAndCommunity: 'SDOH—Social and Community'
                     }
                     onAddOutreach({
                       memberId: basicInfo.id,
@@ -387,7 +404,7 @@ export function MemberProfile({
                       topic: `Resource Referral - ${sdoh.recommendedResources[0].name}`,
                       note: `Referral to ${sdoh.recommendedResources[0].name} for ${topNeed} support`,
                       team: 'Community Partnerships',
-                      purpose: purposeMap[topNeed as keyof typeof purposeMap] || 'SDOH—Food'
+                      purpose: purposeMap[topNeed as keyof typeof purposeMap] || 'SDOH—Economic Instability'
                     })
                   }}
                 >
@@ -452,6 +469,17 @@ export function MemberProfile({
             triggerLabel="Add HRA Outreach"
             className="w-full"
           />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              // This will be handled by the parent component
+              window.location.href = `?tab=outreach&member=${basicInfo.id}`
+            }}
+          >
+            View all outreach for this member
+          </Button>
         </CardContent>
       </Card>
 

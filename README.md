@@ -1,6 +1,6 @@
-# Careleo Insurer CRM
+# Careleo Healthcare CRM
 
-A comprehensive CRM system for health insurers built with Next.js 14, TypeScript, and modern UI components. This application provides complete member management, outreach tracking, analytics, and compliance features for healthcare organizations.
+A comprehensive CRM system for healthcare organizations built with Next.js 14, TypeScript, and modern UI components. This application provides complete member management, outreach tracking, analytics, and compliance features for healthcare organizations.
 
 ## 🚀 Quick Start
 
@@ -54,7 +54,7 @@ A comprehensive CRM system for health insurers built with Next.js 14, TypeScript
 
 ### Member Management
 - **Searchable member directory** with filters
-- **Risk assessment** with color-coded badges
+- **Aberration risk assessment** with color-coded badges
 - **Member profiles** with demographics and conditions
 - **Quick actions** for outreach (Call, SMS, Email)
 
@@ -69,7 +69,7 @@ A comprehensive CRM system for health insurers built with Next.js 14, TypeScript
 - **Channel performance** analysis
 - **Response rate trends** over 14 days
 - **Outreach funnel** visualization
-- **Risk distribution** pie charts
+- **Aberration risk distribution** pie charts
 
 ### Audit Trail
 - **Complete activity logging** for compliance
@@ -99,7 +99,7 @@ A comprehensive CRM system for health insurers built with Next.js 14, TypeScript
 ### Mock Data
 - Edit `lib/mock.ts` to customize data generation
 - Adjust member count, conditions, and vendors
-- Modify risk calculation algorithms
+- Modify aberration risk calculation algorithms
 
 ### Components
 - All components are modular and reusable
@@ -120,7 +120,7 @@ interface Member {
   email: string
   address: string
   conditions: string[]
-  risk: number // 0-100
+  aberrationRisk: number // 0-100
 }
 ```
 
@@ -196,7 +196,7 @@ This project is licensed for healthcare organizations. Please ensure compliance 
 The CRM includes comprehensive SDOH capabilities to address social factors that impact health outcomes:
 
 #### Member SDOH Profiles
-- **Social Risk Score**: 0-100 scale based on member characteristics and outreach patterns
+- **Social Aberration Risk Score**: 0-100 scale based on member characteristics and outreach patterns
 - **Needs Assessment**: Food, Housing, Transportation, Utilities, Behavioral Health (0-100 each)
 - **Area Context**: ZIP code, ADI (Area Deprivation Index), SVI (Social Vulnerability Index), broadband access, primary language
 - **Resource Recommendations**: 2-3 mock community resources for top needs
@@ -206,8 +206,8 @@ The CRM includes comprehensive SDOH capabilities to address social factors that 
 - **Transportation Support Likely**: Members with high transportation needs (≥65)
 - **Utilities Assistance Likely**: Members with high utilities assistance needs (≥65)
 - **BH Support Likely**: Members with high behavioral health needs (≥65)
-- **Nudge-Receptive for AWV**: High nudge propensity, low recent touches, low social risk
-- **Negative Sentiment Risk (SDOH)**: High sentiment risk with SDOH context and frequent touches
+- **Nudge-Receptive for AWV**: High nudge propensity, low recent touches, low social aberration risk
+- **Negative Sentiment Aberration Risk (SDOH)**: High sentiment aberration risk with SDOH context and frequent touches
 
 #### SDOH Outreach
 - **Community Partnerships Team**: Dedicated team for SDOH outreach

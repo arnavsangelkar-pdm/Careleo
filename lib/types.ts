@@ -2,7 +2,12 @@
 // All data and actions are mocked for demonstration purposes
 
 import type { Outreach } from './mock'
-import type { Lob } from './constants'
+import type { Lob, MemberType } from './constants'
+
+export interface ContractAssignment {
+  hcontract: string; // e.g., H1234
+  pbp: string;       // e.g., 017
+}
 
 export interface PlanInfo {
   contractId: string   // e.g., H1234
@@ -16,11 +21,12 @@ export interface PlanInfo {
 export interface MemberSdohProfile {
   socialRiskScore: number // 0-100
   needs: {
-    food: number // 0-100
-    housing: number // 0-100
-    transportation: number // 0-100
-    utilities: number // 0-100
-    behavioralHealth: number // 0-100
+    economicInstability: number // 0-100
+    foodInsecurity: number // 0-100
+    housingAndNeighborhood: number // 0-100
+    healthcareAccess: number // 0-100
+    education: number // 0-100
+    socialAndCommunity: number // 0-100
   }
   areaContext: {
     zipCode: string
@@ -32,7 +38,7 @@ export interface MemberSdohProfile {
   recommendedResources: Array<{
     id: string
     name: string
-    type: 'Food' | 'Transportation' | 'Utilities' | 'Behavioral Health'
+    type: 'Economic Instability' | 'Food Insecurity' | 'Housing and Neighborhood Issues' | 'Healthcare Access' | 'Education' | 'Social and Community Context'
     description: string
     contactInfo: string
   }>

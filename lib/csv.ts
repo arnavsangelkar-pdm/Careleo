@@ -51,7 +51,6 @@ export function formatAuditForCSV(auditEntries: any[]) {
     'Object Type': entry.objectType,
     'Object ID': entry.objectId,
     'Member ID': entry.memberId,
-    'Vendor': entry.vendor,
     'IP Address': entry.ip,
     'Details': entry.details
   }))
@@ -83,7 +82,7 @@ export function formatMembersForCSV(memberEntries: any[]) {
     'Email': member.email,
     'Address': member.address,
     'Conditions': member.conditions.join('; '),
-    'Risk Score': member.risk
+    'Aberration Risk Score': member.aberrationRisk
   }))
 }
 

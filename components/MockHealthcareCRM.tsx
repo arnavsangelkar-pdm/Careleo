@@ -17,11 +17,10 @@ import {
 } from '@/lib/mock'
 import { MembersTab } from './MembersTab'
 import { OutreachTab } from './OutreachTab'
-import { AnalyticsTab } from './AnalyticsTab'
 import { AuditTab } from './AuditTab'
 import { CohortsDashboard } from './cohorts/CohortsDashboard'
-import { OutreachAnalysis } from './analytics/OutreachAnalysis'
-import { Shield, Users, MessageSquare, BarChart3, FileText, Target, TrendingUp } from 'lucide-react'
+import { AnalyticsDashboard } from './analytics/AnalyticsDashboard'
+import { Shield, Users, MessageSquare, BarChart3, FileText, Target } from 'lucide-react'
 import { LoadingShimmer } from './LoadingShimmer'
 
 export default function MockHealthcareCRM() {
@@ -39,15 +38,12 @@ export default function MockHealthcareCRM() {
     const initializeData = async () => {
       try {
         setIsLoading(true)
-        // Generate a large dataset for realistic demo
-        const mockMembers = generateMockMembers(427)
-        const mockOutreach = generateMockOutreach(mockMembers, 427)
+        // Generate 137 members with 3-4 outreach each (realistic dataset)
+        const mockMembers = generateMockMembers(137)
+        const mockOutreach = generateMockOutreach(mockMembers, 450) // ~3.3 outreach per member
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
         
-        // Add SDOH profiles to members
-        const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
-        
-        setMembers(membersWithSdoh)
+        setMembers(mockMembers)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
         setIsLoading(false)
@@ -112,7 +108,6 @@ export default function MockHealthcareCRM() {
       memberId: newOutreach.memberId,
       timestamp: new Date().toISOString(),
       ip: '192.168.1.100',
-      vendor: member?.vendor || selectedMember?.vendor || 'Demo Vendor',
       details: `Created outreach: ${data.topic}${data.purpose?.startsWith('SDOH') ? ' (SDOH domain)' : ''}`
     }
 
@@ -134,7 +129,6 @@ export default function MockHealthcareCRM() {
       memberId: member.id,
       timestamp: new Date().toISOString(),
       ip: '192.168.1.100',
-      vendor: member.vendor,
       details: `${action.replace('_', ' ').toLowerCase()} for member ${member.name}`
     }
 
@@ -156,7 +150,7 @@ export default function MockHealthcareCRM() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-blue-600" />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Careleo Insurer CRM</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Careleo Healthcare CRM</h1>
                   <p className="text-sm text-gray-500">Healthcare CRM Platform</p>
                 </div>
               </div>
@@ -187,7 +181,7 @@ export default function MockHealthcareCRM() {
           </div>
         ) : (
           <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Members</span>
@@ -203,10 +197,6 @@ export default function MockHealthcareCRM() {
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="outreach-analysis" className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <span>Outreach Analysis</span>
             </TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -256,24 +246,9 @@ export default function MockHealthcareCRM() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <AnalyticsTab
+            <AnalyticsDashboard
               outreach={outreach}
               members={members}
-            />
-          </TabsContent>
-
-          <TabsContent value="outreach-analysis" className="space-y-6">
-            <OutreachAnalysis
-              outreach={outreach}
-              members={members}
-              onNavigateToOutreach={(filters) => {
-                // Navigate to outreach tab with filters
-                const params = new URLSearchParams()
-                Object.entries(filters).forEach(([key, value]) => {
-                  params.set(key, value)
-                })
-                router.replace(`?tab=outreach&${params.toString()}`, { scroll: false })
-              }}
             />
           </TabsContent>
 
@@ -290,7 +265,7 @@ export default function MockHealthcareCRM() {
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500">
-            © Careleo Insurer CRM • Healthcare Management Platform
+            © Careleo Healthcare CRM • Healthcare Management Platform
           </p>
         </div>
       </footer>

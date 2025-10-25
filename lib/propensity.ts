@@ -36,10 +36,12 @@ function hasRelevantCondition(member: Member, purpose: Purpose): boolean {
     'Medication Adherence': ['Diabetes', 'Hypertension', 'Heart Disease', 'High Cholesterol'],
     'RAF/Chart Retrieval': ['Diabetes', 'Hypertension', 'Heart Disease', 'COPD', 'Depression'],
     'Care Transition Follow-up': ['Heart Disease', 'COPD', 'Diabetes'],
-    'SDOH—Food': [], // All members potentially eligible
-    'SDOH—Transport': [], // All members potentially eligible
-    'SDOH—Utilities': [], // All members potentially eligible
-    'SDOH—BH': ['Depression', 'Anxiety'] // Members with mental health conditions
+    'SDOH—Economic Instability': [], // All members potentially eligible
+    'SDOH—Food Insecurity': [], // All members potentially eligible
+    'SDOH—Housing and Neighborhood': [], // All members potentially eligible
+    'SDOH—Healthcare Access': [], // All members potentially eligible
+    'SDOH—Education': [], // All members potentially eligible
+    'SDOH—Social and Community': ['Depression', 'Anxiety'] // Members with mental health conditions
   }
   
   const relevantConditions = conditionMap[purpose] || []
@@ -93,7 +95,7 @@ export function scoreNudgePropensity(member: Member, outreach: Outreach[]): numb
   return Math.max(0, Math.min(100, Math.round(score)))
 }
 
-// Calculate negative sentiment risk score (0-100)
+// Calculate negative sentiment aberration risk score (0-100)
 export function scoreNegativeSentiment(member: Member, outreach: Outreach[]): number {
   const memberOutreach = outreach.filter(o => o.memberId === member.id)
   const rng = seededRng(parseInt(member.id.replace('M', '')) + 1000)

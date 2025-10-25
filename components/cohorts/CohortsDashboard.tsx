@@ -48,7 +48,7 @@ const cohortIcons = {
   'mammogram-nudge': Heart,
   'awv-nudge': Users,
   'negative-sentiment': AlertTriangle,
-  'fatigue-risk': TrendingDown,
+  'fatigue-aberration-risk': TrendingDown,
   'unreached': Clock,
   'food-support': Heart,
   'transport-support': Car,
@@ -63,7 +63,7 @@ const cohortColors = {
   'mammogram-nudge': 'bg-pink-100 text-pink-800 border-pink-200',
   'awv-nudge': 'bg-blue-100 text-blue-800 border-blue-200',
   'negative-sentiment': 'bg-red-100 text-red-800 border-red-200',
-  'fatigue-risk': 'bg-orange-100 text-orange-800 border-orange-200',
+  'fatigue-aberration-risk': 'bg-orange-100 text-orange-800 border-orange-200',
   'unreached': 'bg-gray-100 text-gray-800 border-gray-200',
   'food-support': 'bg-amber-100 text-amber-800 border-amber-200',
   'transport-support': 'bg-indigo-100 text-indigo-800 border-indigo-200',
@@ -78,7 +78,7 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [teamFilter, setTeamFilter] = useState<string>('All')
-  const [riskFilter, setRiskFilter] = useState<string>('All')
+  const [aberrationRiskFilter, setAberrationRiskFilter] = useState<string>('All')
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [bulkOutreachDialog, setBulkOutreachDialog] = useState(false)
   const [bulkOutreachData, setBulkOutreachData] = useState({
@@ -116,9 +116,9 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
       })
     }
     
-    if (riskFilter !== 'All') {
+    if (aberrationRiskFilter !== 'All') {
       filtered = filtered.filter(member => {
-        switch (riskFilter) {
+        switch (aberrationRiskFilter) {
           case 'Low': return member.signals.nudgePropensity <= 40
           case 'Medium': return member.signals.nudgePropensity > 40 && member.signals.nudgePropensity <= 70
           case 'High': return member.signals.nudgePropensity > 70
@@ -128,7 +128,7 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
     }
     
     return filtered
-  }, [selectedCohort, searchQuery, teamFilter, riskFilter, outreach])
+  }, [selectedCohort, searchQuery, teamFilter, aberrationRiskFilter, outreach])
 
   const handleExportCSV = () => {
     if (!selectedCohort || filteredCohortMembers.length === 0) return
@@ -319,15 +319,15 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
                           </SelectContent>
                         </Select>
                         
-                        <Select value={riskFilter} onValueChange={setRiskFilter}>
+                        <Select value={aberrationRiskFilter} onValueChange={setAberrationRiskFilter}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Filter by Risk" />
+                            <SelectValue placeholder="Filter by Aberration Risk" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="All">All Risk Levels</SelectItem>
-                            <SelectItem value="Low">Low Risk (0-40)</SelectItem>
-                            <SelectItem value="Medium">Medium Risk (41-70)</SelectItem>
-                            <SelectItem value="High">High Risk (71-100)</SelectItem>
+                            <SelectItem value="All">All Aberration Risk Levels</SelectItem>
+                            <SelectItem value="Low">Low Aberration Risk (0-40)</SelectItem>
+                            <SelectItem value="Medium">Medium Aberration Risk (41-70)</SelectItem>
+                            <SelectItem value="High">High Aberration Risk (71-100)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -6,8 +6,8 @@ import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Careleo Insurer CRM',
-  description: 'Comprehensive CRM system for health insurers',
+  title: 'Careleo Healthcare CRM',
+  description: 'Comprehensive CRM system for healthcare organizations',
 }
 
 export default function RootLayout({

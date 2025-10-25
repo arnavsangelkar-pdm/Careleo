@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -44,17 +45,19 @@ interface OutreachTabProps {
 }
 
 export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutreach }: OutreachTabProps) {
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [channelFilter, setChannelFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
   const [teamFilter, setTeamFilter] = useState('All')
   const [purposeFilter, setPurposeFilter] = useState('All')
+  const [memberTypeFilter, setMemberTypeFilter] = useState('All')
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedOutreach, setSelectedOutreach] = useState<Outreach | null>(null)
   const [showDetailsSheet, setShowDetailsSheet] = useState(false)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [memberSearchQuery, setMemberSearchQuery] = useState('')
-  const [memberRiskFilter, setMemberRiskFilter] = useState('All')
+  const [memberAberrationRiskFilter, setMemberAberrationRiskFilter] = useState('All')
   const [memberVendorFilter, setMemberVendorFilter] = useState('All')
   const [outreachForm, setOutreachForm] = useState({
     channel: '',
@@ -63,18 +66,65 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     note: ''
   })
 
+  // Apply URL-based filters on component mount
+  useEffect(() => {
+    const memberId = searchParams.get('member')
+    const window = searchParams.get('window')
+    const team = searchParams.get('team')
+    const purpose = searchParams.get('purpose')
+    const channel = searchParams.get('channel')
+    const memberType = searchParams.get('memberType')
+
+    if (memberId) {
+      setSearchQuery(memberId)
+    }
+    if (window === 'last30d') {
+      // This would filter to last 30 days - handled in filteredOutreach
+    }
+    if (team) {
+      setTeamFilter(team)
+    }
+    if (purpose) {
+      setPurposeFilter(purpose)
+    }
+    if (channel) {
+      setChannelFilter(channel)
+    }
+    if (memberType) {
+      setMemberTypeFilter(memberType)
+    }
+  }, [searchParams])
+
   const filteredOutreach = outreach.filter(entry => {
     const matchesSearch = !searchQuery || 
       entry.memberName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       entry.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.agent.toLowerCase().includes(searchQuery.toLowerCase())
+      entry.agent.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.memberId.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesChannel = channelFilter === 'All' || entry.channel === channelFilter
     const matchesStatus = statusFilter === 'All' || entry.status === statusFilter
     const matchesTeam = teamFilter === 'All' || entry.team === teamFilter
     const matchesPurpose = purposeFilter === 'All' || entry.purpose === purposeFilter
     
-    return matchesSearch && matchesChannel && matchesStatus && matchesTeam && matchesPurpose
+    // Filter by member type
+    const matchesMemberType = memberTypeFilter === 'All' || (() => {
+      const member = members.find(m => m.id === entry.memberId)
+      return member && member.memberType === memberTypeFilter
+    })()
+    
+    // Filter by time window if specified
+    const matchesTimeWindow = !searchParams.get('window') || (() => {
+      if (searchParams.get('window') === 'last30d') {
+        const touchDate = new Date(entry.timestamp)
+        const cutoffDate = new Date()
+        cutoffDate.setDate(cutoffDate.getDate() - 30)
+        return touchDate >= cutoffDate
+      }
+      return true
+    })()
+    
+    return matchesSearch && matchesChannel && matchesStatus && matchesTeam && matchesPurpose && matchesMemberType && matchesTimeWindow
   })
 
   const channelData = getOutreachByChannel(outreach)
@@ -86,8 +136,8 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
   )
   
   // Calculate touchpoint metrics
-  const avgTouchpoints30d = touchesPerMember(outreach, members.length, 30)
-  const avgTouchpoints60d = touchesPerMember(outreach, members.length, 60)
+  const avgTouchpoints30d = touchesPerMember(outreach, members, 30)
+  const avgTouchpoints60d = touchesPerMember(outreach, members, 60)
   const momTouchpoints = monthOverMonth(avgTouchpoints30d, avgTouchpoints60d)
   
   const hraTouches30d = getHraOutreach(outreach).filter(o => {
@@ -114,12 +164,12 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
       member.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
     )
     
-    if (memberRiskFilter !== 'All') {
+    if (memberAberrationRiskFilter !== 'All') {
       filtered = filtered.filter(member => {
-        switch (memberRiskFilter) {
-          case 'Low': return member.risk <= 40
-          case 'Medium': return member.risk > 40 && member.risk <= 70
-          case 'High': return member.risk > 70
+        switch (memberAberrationRiskFilter) {
+          case 'Low': return member.aberrationRisk <= 40
+          case 'Medium': return member.aberrationRisk > 40 && member.aberrationRisk <= 70
+          case 'High': return member.aberrationRisk > 70
           default: return true
         }
       })
@@ -130,7 +180,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     }
     
     return filtered
-  }, [members, memberSearchQuery, memberRiskFilter, memberVendorFilter])
+  }, [members, memberSearchQuery, memberAberrationRiskFilter, memberVendorFilter])
 
   const handleAddOutreach = () => {
     if (selectedMembers.length > 0 && outreachForm.channel && outreachForm.status && outreachForm.topic) {
@@ -149,7 +199,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
       setShowAddDialog(false)
       setSelectedMembers([])
       setMemberSearchQuery('')
-      setMemberRiskFilter('All')
+      setMemberAberrationRiskFilter('All')
       setMemberVendorFilter('All')
       setOutreachForm({
         channel: '',
@@ -247,7 +297,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           <CardTitle>Outreach Directory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -309,10 +359,22 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                 <SelectItem value="Medication Adherence">Medication Adherence</SelectItem>
                 <SelectItem value="RAF/Chart Retrieval">RAF/Chart Retrieval</SelectItem>
                 <SelectItem value="Care Transition Follow-up">Care Transition Follow-up</SelectItem>
-                <SelectItem value="SDOH—Food">SDOH—Food</SelectItem>
-                <SelectItem value="SDOH—Transport">SDOH—Transport</SelectItem>
-                <SelectItem value="SDOH—Utilities">SDOH—Utilities</SelectItem>
-                <SelectItem value="SDOH—BH">SDOH—BH</SelectItem>
+                <SelectItem value="SDOH—Economic Instability">SDOH—Economic Instability</SelectItem>
+                <SelectItem value="SDOH—Food Insecurity">SDOH—Food Insecurity</SelectItem>
+                <SelectItem value="SDOH—Housing and Neighborhood">SDOH—Housing and Neighborhood</SelectItem>
+                <SelectItem value="SDOH—Healthcare Access">SDOH—Healthcare Access</SelectItem>
+                <SelectItem value="SDOH—Education">SDOH—Education</SelectItem>
+                <SelectItem value="SDOH—Social and Community">SDOH—Social and Community</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={memberTypeFilter} onValueChange={setMemberTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by member type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Types</SelectItem>
+                <SelectItem value="Member">Member</SelectItem>
+                <SelectItem value="Prospect">Prospect</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center text-sm text-gray-500">
@@ -441,22 +503,22 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Risk Level</label>
-                    <Select value={memberRiskFilter} onValueChange={setMemberRiskFilter}>
+                    <label className="text-sm font-medium text-gray-600 mb-2 block">Aberration Risk Level</label>
+                    <Select value={memberAberrationRiskFilter} onValueChange={setMemberAberrationRiskFilter}>
                       <SelectTrigger>
-                        <SelectValue placeholder="All Risk Levels" />
+                        <SelectValue placeholder="All Aberration Risk Levels" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="All">All Risk Levels</SelectItem>
-                        <SelectItem value="Low">Low Risk (0-40)</SelectItem>
-                        <SelectItem value="Medium">Medium Risk (41-70)</SelectItem>
-                        <SelectItem value="High">High Risk (71-100)</SelectItem>
+                        <SelectItem value="All">All Aberration Risk Levels</SelectItem>
+                        <SelectItem value="Low">Low Aberration Risk (0-40)</SelectItem>
+                        <SelectItem value="Medium">Medium Aberration Risk (41-70)</SelectItem>
+                        <SelectItem value="High">High Aberration Risk (71-100)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div>
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Insurance Company</label>
+                    <label className="text-sm font-medium text-gray-600 mb-2 block">Healthcare Organization</label>
                     <Select value={memberVendorFilter} onValueChange={setMemberVendorFilter}>
                       <SelectTrigger>
                         <SelectValue placeholder="All Companies" />

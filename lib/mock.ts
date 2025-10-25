@@ -1,8 +1,8 @@
-// Data generators for the Insurer CRM
+// Data generators for the Healthcare CRM
 // Deterministic data generation for consistent results
 
 import type { PlanInfo } from './types'
-import { LOB } from './constants'
+import { LOB, MEMBER_TYPES } from './constants'
 
 export interface Member {
   id: string
@@ -14,8 +14,9 @@ export interface Member {
   email: string
   address: string
   conditions: string[]
-  risk: number // 0-100
+  aberrationRisk: number // 0-100
   planInfo: PlanInfo // New field for health plan contract details
+  memberType: 'Member' | 'Prospect' // New field for member vs prospect
   sdoh?: import('./types').MemberSdohProfile
 }
 
@@ -30,7 +31,7 @@ export interface Outreach {
   agent: string
   note: string
   team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships'
-  purpose: 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
+  purpose: 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
 }
 
 export interface AuditEntry {
@@ -42,7 +43,6 @@ export interface AuditEntry {
   memberId: string
   timestamp: string
   ip: string
-  vendor: string
   details: string
 }
 
@@ -116,9 +116,51 @@ const AGENTS = [
 ]
 
 const TOPICS = [
-  'Annual Checkup Reminder', 'Medication Adherence', 'Preventive Care',
-  'Wellness Program', 'Claims Inquiry', 'Provider Network', 'Coverage Questions',
-  'Health Assessment', 'Care Coordination', 'Disease Management'
+  // Preventive Care & Wellness
+  'Annual Checkup Reminder', 'Preventive Care', 'Wellness Program', 'Health Assessment',
+  'Flu Shot Reminder', 'Mammogram Screening', 'Colonoscopy Screening', 'Dental Checkup',
+  'Vision Exam', 'Hearing Test', 'Bone Density Scan', 'Skin Cancer Screening',
+  
+  // Disease Management & Chronic Care
+  'Medication Adherence', 'Disease Management', 'Chronic Care Management', 'Diabetes Management',
+  'Hypertension Monitoring', 'Heart Disease Care', 'COPD Management', 'Asthma Control',
+  'Mental Health Check-in', 'Depression Screening', 'Anxiety Management', 'Pain Management',
+  
+  // Care Coordination & Referrals
+  'Care Coordination', 'Specialist Referral', 'Primary Care Follow-up', 'Emergency Room Follow-up',
+  'Discharge Planning', 'Care Transition Follow-up', 'Hospital Discharge', 'Rehabilitation Planning',
+  'Home Health Services', 'Physical Therapy', 'Occupational Therapy', 'Speech Therapy',
+  
+  // Medication & Pharmacy
+  'Prescription Refill', 'Medication Review', 'Drug Interaction Check', 'Side Effect Monitoring',
+  'Pharmacy Consultation', 'Medication Adherence Program', 'Prior Authorization', 'Formulary Change',
+  
+  // Appointments & Scheduling
+  'Appointment Scheduling', 'Appointment Reminder', 'Appointment Confirmation', 'Reschedule Request',
+  'Provider Availability', 'Telehealth Setup', 'In-Person Visit', 'Virtual Consultation',
+  
+  // Claims & Coverage
+  'Claims Inquiry', 'Coverage Questions', 'Benefits Explanation', 'Prior Authorization',
+  'Provider Network', 'Out-of-Network Care', 'Copay Assistance', 'Deductible Information',
+  'Coverage Verification', 'Claims Status', 'Appeal Process', 'Grievance Handling',
+  
+  // Social Determinants & Support
+  'Transportation Assistance', 'Social Services', 'Financial Assistance', 'Language Services',
+  'Nutrition Counseling', 'Food Assistance', 'Housing Support', 'Utility Assistance',
+  'Employment Resources', 'Education Support', 'Community Resources', 'Crisis Intervention',
+  
+  // Lab & Test Results
+  'Lab Results Follow-up', 'Test Results Discussion', 'Abnormal Results', 'Follow-up Testing',
+  'Imaging Results', 'Biopsy Results', 'Blood Work Review', 'Vital Signs Monitoring',
+  
+  // Behavioral Health
+  'Behavioral Health Support', 'Mental Health Resources', 'Counseling Services', 'Crisis Support',
+  'Substance Use Support', 'Grief Counseling', 'Family Therapy', 'Group Therapy',
+  
+  // Member Services
+  'Member Services', 'Account Update', 'Contact Information', 'Emergency Contacts',
+  'ID Card', 'ID Verification', 'Address Change', 'Phone Number Update',
+  'Email Update', 'Preferred Language', 'Accessibility Needs', 'Communication Preferences'
 ]
 
 const TEAMS = [
@@ -128,11 +170,254 @@ const TEAMS = [
 const PURPOSES = [
   'HRA Completion', 'HRA Reminder', 'AWV', 'HEDIS - A1c', 'HEDIS - Mammogram', 
   'Medication Adherence', 'RAF/Chart Retrieval', 'Care Transition Follow-up', 
-  'SDOH—Food', 'SDOH—Transport', 'SDOH—Utilities', 'SDOH—BH'
+  'SDOH—Economic Instability', 'SDOH—Food Insecurity', 'SDOH—Housing and Neighborhood', 
+  'SDOH—Healthcare Access', 'SDOH—Education', 'SDOH—Social and Community'
 ]
 
+// Detailed note templates for different purposes
+const PURPOSE_NOTES = {
+  'HRA Completion': [
+    'HRA outreach: Following up on incomplete assessment. Member was responsive and engaged during initial call.',
+    'HRA outreach: Following up on incomplete assessment. Left voicemail, no response yet. Will try alternative contact method.',
+    'HRA outreach: Following up on incomplete assessment. Member requested callback at more convenient time.',
+    'HRA outreach: Following up on incomplete assessment. Member completed assessment over the phone with assistance.',
+    'HRA outreach: Following up on incomplete assessment. Member requested paper copy of assessment to complete at home.',
+    'HRA outreach: Following up on incomplete assessment. Member needs help understanding some questions, scheduled follow-up call.',
+    'HRA outreach: Following up on incomplete assessment. Assessment partially completed, follow-up needed for remaining sections.',
+    'HRA outreach: Following up on incomplete assessment. Member expressed concerns about privacy, provided reassurance.',
+    'HRA outreach: Following up on incomplete assessment. Member wants to speak with nurse first before completing.',
+    'HRA outreach: Following up on incomplete assessment. Assessment completed with family member assistance.',
+    'HRA outreach: Following up on incomplete assessment. Member scheduled in-person completion at local office.',
+    'HRA outreach: Following up on incomplete assessment. Technical difficulties with online platform, provided alternative.',
+    'HRA outreach: Following up on incomplete assessment. Member requested Spanish language version of assessment.',
+    'HRA outreach: Following up on incomplete assessment. Member declined to participate, documented reason.',
+    'HRA outreach: Following up on incomplete assessment. Member needs assistance with online portal access.'
+  ],
+  'HRA Reminder': [
+    'HRA outreach: Reminding member to complete assessment. Member was responsive and committed to completing soon.',
+    'HRA outreach: Reminding member to complete assessment. Left voicemail with clear instructions and deadline.',
+    'HRA outreach: Reminding member to complete assessment. Member requested reminder call next week.',
+    'HRA outreach: Reminding member to complete assessment. Member completed assessment during this call.',
+    'HRA outreach: Reminding member to complete assessment. Member needs assistance with online access.',
+    'HRA outreach: Reminding member to complete assessment. Member prefers to complete over the phone.',
+    'HRA outreach: Reminding member to complete assessment. Member requested paper copy mailed to home.',
+    'HRA outreach: Reminding member to complete assessment. Member has questions about assessment purpose.',
+    'HRA outreach: Reminding member to complete assessment. Member scheduled completion for next week.',
+    'HRA outreach: Reminding member to complete assessment. Member needs interpreter services.',
+    'HRA outreach: Reminding member to complete assessment. Member expressed time constraints, provided flexible options.',
+    'HRA outreach: Reminding member to complete assessment. Member wants to review with family member first.',
+    'HRA outreach: Reminding member to complete assessment. Member concerned about assessment length, provided reassurance.',
+    'HRA outreach: Reminding member to complete assessment. Member needs help with technical setup.',
+    'HRA outreach: Reminding member to complete assessment. Member completed partial assessment, follow-up scheduled.'
+  ],
+  'AWV': [
+    'AWV outreach: Scheduling Annual Wellness Visit. Member was responsive and scheduled appointment for next week.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member requested specific provider, checked availability.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member prefers telehealth option, scheduled virtual visit.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member needs transportation assistance, coordinated with community resources.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member has scheduling conflicts, found alternative times.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member completed visit, discussed care plan and goals.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member declined visit, documented reason and offered alternatives.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member needs interpreter services for appointment.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member wants to review benefits coverage first.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member scheduled visit with preferred provider.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member needs help understanding AWV benefits.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member requested reminder call before appointment.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member completed visit, updated care plan based on findings.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member needs assistance with appointment confirmation.',
+    'AWV outreach: Scheduling Annual Wellness Visit. Member scheduled follow-up for care plan discussion.'
+  ],
+  'HEDIS - A1c': [
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member scheduled lab appointment for next week.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member completed recent A1c test, results discussed.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member needs help finding lab location.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member requested home testing kit information.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member scheduled with preferred lab.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member needs transportation to lab.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member completed test, discussed results and care plan.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member declined testing, documented reason.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member needs help understanding test importance.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member scheduled test with endocrinologist.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member requested reminder before test date.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member needs assistance with lab orders.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member completed test, updated diabetes management plan.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member needs help with fasting instructions.',
+    'HEDIS A1c outreach: Reminding member about diabetes monitoring. Member scheduled follow-up to discuss results.'
+  ],
+  'HEDIS - Mammogram': [
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member scheduled mammogram for next month.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member completed recent mammogram, results normal.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member needs help finding imaging center.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member requested 3D mammogram information.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member scheduled with preferred facility.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member needs transportation assistance.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member completed screening, discussed results.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member declined screening, documented reason.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member needs help understanding screening benefits.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member scheduled with women\'s health center.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member requested reminder before appointment.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member needs assistance with coverage verification.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member completed screening, updated care plan.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member needs help with appointment preparation.',
+    'HEDIS Mammogram outreach: Reminding member about breast cancer screening. Member scheduled follow-up for results discussion.'
+  ],
+  'Medication Adherence': [
+    'Medication adherence outreach: Discussing medication compliance. Member reported good adherence, reviewed refill schedule.',
+    'Medication adherence outreach: Discussing medication compliance. Member experiencing side effects, discussed with provider.',
+    'Medication adherence outreach: Discussing medication compliance. Member needs help with medication organization.',
+    'Medication adherence outreach: Discussing medication compliance. Member requested pill reminder system information.',
+    'Medication adherence outreach: Discussing medication compliance. Member scheduled medication review with pharmacist.',
+    'Medication adherence outreach: Discussing medication compliance. Member needs assistance with prescription costs.',
+    'Medication adherence outreach: Discussing medication compliance. Member completed medication reconciliation.',
+    'Medication adherence outreach: Discussing medication compliance. Member declined medication review, documented reason.',
+    'Medication adherence outreach: Discussing medication compliance. Member needs help understanding medication instructions.',
+    'Medication adherence outreach: Discussing medication compliance. Member scheduled with medication management program.',
+    'Medication adherence outreach: Discussing medication compliance. Member requested reminder system setup.',
+    'Medication adherence outreach: Discussing medication compliance. Member needs assistance with pharmacy services.',
+    'Medication adherence outreach: Discussing medication compliance. Member completed adherence assessment, updated plan.',
+    'Medication adherence outreach: Discussing medication compliance. Member needs help with medication delivery options.',
+    'Medication adherence outreach: Discussing medication compliance. Member scheduled follow-up for adherence monitoring.'
+  ],
+  'RAF/Chart Retrieval': [
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member provided consent, records requested.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member needs help understanding process.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member scheduled with provider for records.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member requested assistance with forms.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member completed authorization, records obtained.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member needs help finding provider contact.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member scheduled records review appointment.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member declined records release, documented.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member needs help understanding RAF process.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member scheduled with care coordinator.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member requested reminder for follow-up.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member needs assistance with provider communication.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member completed records review, updated RAF.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member needs help with multiple provider records.',
+    'RAF/Chart retrieval outreach: Requesting medical records for risk adjustment. Member scheduled follow-up for records completion.'
+  ],
+  'Care Transition Follow-up': [
+    'Care transition follow-up: Post-discharge care coordination. Member completed follow-up appointment, care plan updated.',
+    'Care transition follow-up: Post-discharge care coordination. Member needs help scheduling follow-up appointments.',
+    'Care transition follow-up: Post-discharge care coordination. Member scheduled medication review with pharmacist.',
+    'Care transition follow-up: Post-discharge care coordination. Member requested home health services information.',
+    'Care transition follow-up: Post-discharge care coordination. Member completed transition assessment, needs identified.',
+    'Care transition follow-up: Post-discharge care coordination. Member needs assistance with discharge instructions.',
+    'Care transition follow-up: Post-discharge care coordination. Member scheduled with primary care provider.',
+    'Care transition follow-up: Post-discharge care coordination. Member declined follow-up services, documented reason.',
+    'Care transition follow-up: Post-discharge care coordination. Member needs help understanding care plan changes.',
+    'Care transition follow-up: Post-discharge care coordination. Member scheduled with care coordinator.',
+    'Care transition follow-up: Post-discharge care coordination. Member requested reminder for medication changes.',
+    'Care transition follow-up: Post-discharge care coordination. Member needs assistance with specialist referrals.',
+    'Care transition follow-up: Post-discharge care coordination. Member completed transition, care plan implemented.',
+    'Care transition follow-up: Post-discharge care coordination. Member needs help with equipment and supplies.',
+    'Care transition follow-up: Post-discharge care coordination. Member scheduled follow-up for care plan review.'
+  ],
+  'SDOH—Economic Instability': [
+    'SDOH outreach: Economic instability support. Member needs assistance with utility bills, connected with energy assistance program.',
+    'SDOH outreach: Economic instability support. Member experiencing job loss, provided employment resources and job training information.',
+    'SDOH outreach: Economic instability support. Member needs help with rent assistance, connected with housing voucher program.',
+    'SDOH outreach: Economic instability support. Member struggling with medical bills, provided financial assistance program information.',
+    'SDOH outreach: Economic instability support. Member needs help with food costs, connected with SNAP benefits and food banks.',
+    'SDOH outreach: Economic instability support. Member experiencing transportation costs, provided transportation assistance options.',
+    'SDOH outreach: Economic instability support. Member needs help with prescription costs, connected with medication assistance programs.',
+    'SDOH outreach: Economic instability support. Member declined economic support, documented reason and offered future assistance.',
+    'SDOH outreach: Economic instability support. Member needs help understanding available resources, provided comprehensive information.',
+    'SDOH outreach: Economic instability support. Member scheduled with financial counselor for comprehensive assessment.',
+    'SDOH outreach: Economic instability support. Member requested assistance with premium costs.',
+    'SDOH outreach: Economic instability support. Member needs help with debt management, connected with credit counseling services.',
+    'SDOH outreach: Economic instability support. Member completed economic assessment, support plan implemented.',
+    'SDOH outreach: Economic instability support. Member needs help with emergency financial assistance.',
+    'SDOH outreach: Economic instability support. Member scheduled follow-up for ongoing economic support coordination.'
+  ],
+  'SDOH—Food Insecurity': [
+    'SDOH outreach: Food insecurity support. Member needs immediate food assistance, connected with local food bank and emergency resources.',
+    'SDOH outreach: Food insecurity support. Member needs help with SNAP application, provided assistance with enrollment process.',
+    'SDOH outreach: Food insecurity support. Member needs meal delivery services, connected with Meals on Wheels program.',
+    'SDOH outreach: Food insecurity support. Member needs help with nutrition education, provided healthy eating resources.',
+    'SDOH outreach: Food insecurity support. Member needs assistance with grocery shopping, connected with shopping assistance programs.',
+    'SDOH outreach: Food insecurity support. Member needs help with cooking resources, provided cooking classes and equipment information.',
+    'SDOH outreach: Food insecurity support. Member needs assistance with dietary restrictions, connected with specialized food programs.',
+    'SDOH outreach: Food insecurity support. Member declined food assistance, documented reason and offered future support.',
+    'SDOH outreach: Food insecurity support. Member needs help understanding food assistance programs, provided comprehensive information.',
+    'SDOH outreach: Food insecurity support. Member scheduled with nutritionist for dietary assessment and planning.',
+    'SDOH outreach: Food insecurity support. Member requested assistance with food storage and preparation.',
+    'SDOH outreach: Food insecurity support. Member needs help with community garden access, connected with local programs.',
+    'SDOH outreach: Food insecurity support. Member completed food security assessment, support plan implemented.',
+    'SDOH outreach: Food insecurity support. Member needs help with food transportation, provided delivery options.',
+    'SDOH outreach: Food insecurity support. Member scheduled follow-up for ongoing food security support.'
+  ],
+  'SDOH—Housing and Neighborhood': [
+    'SDOH outreach: Housing and neighborhood support. Member needs help with unsafe housing conditions, connected with housing inspection services.',
+    'SDOH outreach: Housing and neighborhood support. Member needs assistance with rent increase, connected with tenant rights resources.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help with neighborhood safety, connected with community safety programs.',
+    'SDOH outreach: Housing and neighborhood support. Member needs assistance with home repairs, connected with home improvement programs.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help with accessibility modifications, connected with ADA resources.',
+    'SDOH outreach: Housing and neighborhood support. Member needs assistance with utility access, connected with utility assistance programs.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help with neighborhood resources, provided community center information.',
+    'SDOH outreach: Housing and neighborhood support. Member declined housing assistance, documented reason and offered future support.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help understanding housing rights, provided comprehensive information.',
+    'SDOH outreach: Housing and neighborhood support. Member scheduled with housing counselor for comprehensive assessment.',
+    'SDOH outreach: Housing and neighborhood support. Member requested assistance with emergency housing.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help with neighborhood transportation, connected with local services.',
+    'SDOH outreach: Housing and neighborhood support. Member completed housing assessment, support plan implemented.',
+    'SDOH outreach: Housing and neighborhood support. Member needs help with environmental health concerns.',
+    'SDOH outreach: Housing and neighborhood support. Member scheduled follow-up for ongoing housing support coordination.'
+  ],
+  'SDOH—Healthcare Access': [
+    'SDOH outreach: Healthcare access support. Member needs help finding primary care provider, connected with provider network services.',
+    'SDOH outreach: Healthcare access support. Member needs assistance with transportation to appointments, connected with medical transport.',
+    'SDOH outreach: Healthcare access support. Member needs help with telehealth setup, provided technology assistance and training.',
+    'SDOH outreach: Healthcare access support. Member needs assistance with appointment scheduling, provided scheduling support services.',
+    'SDOH outreach: Healthcare access support. Member needs help with benefits navigation, connected with benefits counseling.',
+    'SDOH outreach: Healthcare access support. Member needs assistance with language barriers, connected with interpreter services.',
+    'SDOH outreach: Healthcare access support. Member needs help with after-hours care, provided urgent care and emergency resources.',
+    'SDOH outreach: Healthcare access support. Member declined healthcare access assistance, documented reason and offered future support.',
+    'SDOH outreach: Healthcare access support. Member needs help understanding healthcare benefits, provided comprehensive information.',
+    'SDOH outreach: Healthcare access support. Member scheduled with care coordinator for comprehensive access assessment.',
+    'SDOH outreach: Healthcare access support. Member requested assistance with specialist referrals.',
+    'SDOH outreach: Healthcare access support. Member needs help with prescription access, connected with pharmacy services.',
+    'SDOH outreach: Healthcare access support. Member completed access assessment, support plan implemented.',
+    'SDOH outreach: Healthcare access support. Member needs help with medical equipment access.',
+    'SDOH outreach: Healthcare access support. Member scheduled follow-up for ongoing healthcare access coordination.'
+  ],
+  'SDOH—Education': [
+    'SDOH outreach: Education support. Member needs help with health literacy, connected with health education programs.',
+    'SDOH outreach: Education support. Member needs assistance with digital literacy, connected with computer training programs.',
+    'SDOH outreach: Education support. Member needs help with medication education, provided medication management training.',
+    'SDOH outreach: Education support. Member needs assistance with disease education, connected with condition-specific programs.',
+    'SDOH outreach: Education support. Member needs help with nutrition education, connected with cooking and nutrition classes.',
+    'SDOH outreach: Education support. Member needs assistance with exercise education, connected with fitness programs.',
+    'SDOH outreach: Education support. Member needs help with mental health education, connected with wellness programs.',
+    'SDOH outreach: Education support. Member declined education assistance, documented reason and offered future support.',
+    'SDOH outreach: Education support. Member needs help understanding available education resources, provided comprehensive information.',
+    'SDOH outreach: Education support. Member scheduled with health educator for comprehensive assessment.',
+    'SDOH outreach: Education support. Member requested assistance with language learning.',
+    'SDOH outreach: Education support. Member needs help with financial literacy, connected with financial education programs.',
+    'SDOH outreach: Education support. Member completed education assessment, support plan implemented.',
+    'SDOH outreach: Education support. Member needs help with technology training.',
+    'SDOH outreach: Education support. Member scheduled follow-up for ongoing education support coordination.'
+  ],
+  'SDOH—Social and Community': [
+    'SDOH outreach: Social and community support. Member needs help with social isolation, connected with community support groups.',
+    'SDOH outreach: Social and community support. Member needs assistance with caregiver support, connected with respite care services.',
+    'SDOH outreach: Social and community support. Member needs help with mental health support, connected with counseling services.',
+    'SDOH outreach: Social and community support. Member needs assistance with substance use support, connected with recovery programs.',
+    'SDOH outreach: Social and community support. Member needs help with grief counseling, connected with bereavement services.',
+    'SDOH outreach: Social and community support. Member needs assistance with family support, connected with family therapy services.',
+    'SDOH outreach: Social and community support. Member needs help with community engagement, connected with volunteer opportunities.',
+    'SDOH outreach: Social and community support. Member declined social support, documented reason and offered future assistance.',
+    'SDOH outreach: Social and community support. Member needs help understanding available social resources, provided comprehensive information.',
+    'SDOH outreach: Social and community support. Member scheduled with social worker for comprehensive assessment.',
+    'SDOH outreach: Social and community support. Member requested assistance with crisis intervention.',
+    'SDOH outreach: Social and community support. Member needs help with peer support, connected with peer mentoring programs.',
+    'SDOH outreach: Social and community support. Member completed social assessment, support plan implemented.',
+    'SDOH outreach: Social and community support. Member needs help with cultural support, connected with cultural programs.',
+    'SDOH outreach: Social and community support. Member scheduled follow-up for ongoing social support coordination.'
+  ]
+}
+
 // Generate mock members
-export function generateMockMembers(count: number = 50): Member[] {
+export function generateMockMembers(count: number = 137): Member[] {
   const members: Member[] = []
   
   for (let i = 0; i < count; i++) {
@@ -157,9 +442,9 @@ export function generateMockMembers(count: number = 50): Member[] {
       }
     }
     
-    // Generate risk score based on age and conditions
-    let risk = Math.min(20 + age * 0.5 + conditions.length * 15, 100)
-    risk = Math.max(risk + randomInt(-10, 10), 0)
+    // Generate aberration risk score based on age and conditions
+    let aberrationRisk = Math.min(20 + age * 0.5 + conditions.length * 15, 100)
+    aberrationRisk = Math.max(aberrationRisk + randomInt(-10, 10), 0)
     
     // Generate realistic Medicare Advantage plan info
     const contractId = `H${String(randomInt(1000, 9999))}`
@@ -167,6 +452,9 @@ export function generateMockMembers(count: number = 50): Member[] {
     const planName = randomChoice(PLAN_NAMES)
     const lob = randomChoice(LOB) // Skewed to Medicare Advantage for demo
     const county = randomChoice(COUNTIES)
+    
+    // Generate member type (90% Member, 10% Prospect)
+    const memberType = random() < 0.9 ? 'Member' : 'Prospect'
     
     // Generate effective date (within last 2 years)
     const effectiveDate = new Date()
@@ -184,7 +472,8 @@ export function generateMockMembers(count: number = 50): Member[] {
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
       address: `${randomInt(100, 9999)} ${randomChoice(['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln', 'Maple Dr'])}`,
       conditions,
-      risk: Math.round(risk),
+      aberrationRisk: Math.round(aberrationRisk),
+      memberType,
       planInfo: {
         contractId,
         pbp,
@@ -209,59 +498,316 @@ export function addSdohProfiles(members: Member[], outreach: Outreach[]): Member
   }))
 }
 
-// Generate mock outreach entries
-export function generateMockOutreach(members: Member[], count: number = 100): Outreach[] {
-  const outreach: Outreach[] = []
+// Helper function to get condition-specific topics
+function getConditionSpecificTopics(conditions: string[]): string[] {
+  const conditionTopics: Record<string, string[]> = {
+    'Diabetes': ['Diabetes Management', 'A1c Testing', 'Blood Sugar Monitoring', 'Diabetic Eye Exam', 'Foot Care', 'Nutrition Counseling'],
+    'Hypertension': ['Blood Pressure Monitoring', 'Heart Health', 'Medication Adherence', 'Stress Management', 'Exercise Program'],
+    'Heart Disease': ['Cardiac Care', 'Heart Health', 'Exercise Program', 'Medication Adherence', 'Cardiac Rehabilitation'],
+    'COPD': ['Respiratory Care', 'Breathing Exercises', 'Oxygen Therapy', 'Pulmonary Rehabilitation', 'Smoking Cessation'],
+    'Asthma': ['Asthma Control', 'Inhaler Technique', 'Trigger Management', 'Emergency Action Plan', 'Allergy Management'],
+    'Depression': ['Mental Health Check-in', 'Depression Screening', 'Counseling Services', 'Medication Review', 'Crisis Support'],
+    'Anxiety': ['Anxiety Management', 'Stress Reduction', 'Mental Health Resources', 'Relaxation Techniques', 'Counseling Services'],
+    'High Cholesterol': ['Cholesterol Management', 'Heart Health', 'Diet Counseling', 'Exercise Program', 'Medication Adherence'],
+    'Obesity': ['Weight Management', 'Nutrition Counseling', 'Exercise Program', 'Bariatric Surgery', 'Lifestyle Changes'],
+    'Arthritis': ['Pain Management', 'Joint Care', 'Physical Therapy', 'Exercise Program', 'Medication Review']
+  }
   
-  for (let i = 0; i < count; i++) {
+  const topics: string[] = []
+  conditions.forEach(condition => {
+    if (conditionTopics[condition]) {
+      topics.push(...conditionTopics[condition])
+    }
+  })
+  return topics
+}
+
+// Helper function to get purpose-specific topic
+function getPurposeSpecificTopic(purpose: string): string {
+  const purposeTopics: Record<string, string> = {
+    'HRA Completion': 'Health Risk Assessment - Follow-up',
+    'HRA Reminder': 'Health Risk Assessment - Reminder',
+    'AWV': 'Annual Wellness Visit',
+    'HEDIS - A1c': 'Diabetes Monitoring - A1c Test',
+    'HEDIS - Mammogram': 'Breast Cancer Screening',
+    'Medication Adherence': 'Medication Compliance Review',
+    'RAF/Chart Retrieval': 'Medical Records Request',
+    'Care Transition Follow-up': 'Post-Discharge Care Coordination',
+    'SDOH—Economic Instability': 'Financial Assistance Support',
+    'SDOH—Food Insecurity': 'Food Assistance Support',
+    'SDOH—Housing and Neighborhood': 'Housing Support Services',
+    'SDOH—Healthcare Access': 'Healthcare Access Support',
+    'SDOH—Education': 'Health Education Support',
+    'SDOH—Social and Community': 'Social Support Services'
+  }
+  
+  return purposeTopics[purpose] || randomChoice(TOPICS)
+}
+
+// Helper function to get team based on purpose
+function getTeamForPurpose(purpose: string): string {
+  const teamMapping: Record<string, string[]> = {
+    'HRA Completion': ['Quality', 'Member Services'],
+    'HRA Reminder': ['Quality', 'Member Services'],
+    'AWV': ['Quality', 'Member Services', 'Case Management'],
+    'HEDIS - A1c': ['Quality', 'Case Management'],
+    'HEDIS - Mammogram': ['Quality', 'Case Management'],
+    'Medication Adherence': ['Pharmacy', 'Case Management'],
+    'RAF/Chart Retrieval': ['Risk Adjustment', 'Quality'],
+    'Care Transition Follow-up': ['Case Management', 'Member Services'],
+    'SDOH—Economic Instability': ['Community Partnerships', 'Case Management'],
+    'SDOH—Food Insecurity': ['Community Partnerships', 'Case Management'],
+    'SDOH—Housing and Neighborhood': ['Community Partnerships', 'Case Management'],
+    'SDOH—Healthcare Access': ['Member Services', 'Case Management'],
+    'SDOH—Education': ['Community Partnerships', 'Member Services'],
+    'SDOH—Social and Community': ['Community Partnerships', 'Case Management']
+  }
+  
+  const teams = teamMapping[purpose] || TEAMS
+  return randomChoice(teams)
+}
+
+// Generate mock outreach entries - ensure every member has outreach
+export function generateMockOutreach(members: Member[], count: number = 600): Outreach[] {
+  const outreach: Outreach[] = []
+  let outreachId = 1
+  
+  // First, ensure every member has at least 3-6 outreach entries with more variety
+  members.forEach(member => {
+    // Some members should have more outreach (high aberration risk, complex conditions)
+    const baseCount = member.conditions.length > 2 || member.aberrationRisk > 70 ? randomInt(4, 8) : randomInt(3, 6)
+    const memberOutreachCount = baseCount
+    
+    for (let j = 0; j < memberOutreachCount; j++) {
+      const timestamp = randomDate(
+        new Date(Date.now() - 120 * 24 * 60 * 60 * 1000), // 120 days ago for more history
+        new Date()
+      )
+      
+      // More sophisticated purpose selection based on member characteristics
+      let purpose: string
+      const rand = random()
+      
+      if (rand < 0.4) {
+        // HRA purposes (40% weight)
+        purpose = randomChoice(['HRA Completion', 'HRA Reminder'])
+      } else if (rand < 0.6) {
+        // Condition-specific purposes
+        if (member.conditions.includes('Diabetes')) {
+          purpose = randomChoice(['HEDIS - A1c', 'Medication Adherence', 'AWV'])
+        } else if (member.conditions.includes('Depression') || member.conditions.includes('Anxiety')) {
+          purpose = randomChoice(['SDOH—Social and Community', 'Medication Adherence', 'AWV'])
+        } else if (member.conditions.includes('Heart Disease') || member.conditions.includes('Hypertension')) {
+          purpose = randomChoice(['Medication Adherence', 'Care Transition Follow-up', 'AWV'])
+        } else {
+          purpose = randomChoice(['AWV', 'Medication Adherence', 'RAF/Chart Retrieval'])
+        }
+      } else if (rand < 0.8) {
+        // SDOH purposes (20% weight)
+        purpose = randomChoice([
+          'SDOH—Economic Instability', 'SDOH—Food Insecurity', 'SDOH—Housing and Neighborhood',
+          'SDOH—Healthcare Access', 'SDOH—Education', 'SDOH—Social and Community'
+        ])
+      } else {
+        // Other purposes (20% weight)
+        purpose = randomChoice(['RAF/Chart Retrieval', 'Care Transition Follow-up', 'HEDIS - Mammogram'])
+      }
+      
+      const team = getTeamForPurpose(purpose)
+      
+      // More realistic status distribution based on purpose
+      let statusWeights: number[]
+      if (purpose.startsWith('HRA')) {
+        statusWeights = [0.3, 0.4, 0.2, 0.1] // More in-progress for HRA
+      } else if (purpose.startsWith('SDOH')) {
+        statusWeights = [0.5, 0.2, 0.2, 0.1] // More completed for SDOH
+      } else {
+        statusWeights = [0.4, 0.3, 0.2, 0.1] // Standard distribution
+      }
+      
+      const statusRand = random()
+      let status: 'Planned' | 'In-Progress' | 'Completed' | 'Failed'
+      if (statusRand < statusWeights[0]) status = 'Completed'
+      else if (statusRand < statusWeights[0] + statusWeights[1]) status = 'In-Progress'
+      else if (statusRand < statusWeights[0] + statusWeights[1] + statusWeights[2]) status = 'Planned'
+      else status = 'Failed'
+      
+      // Channel selection based on purpose and member characteristics
+      let channelWeights: number[]
+      if (purpose.startsWith('SDOH')) {
+        channelWeights = [0.5, 0.2, 0.2, 0.1] // More calls for SDOH
+      } else if (purpose.startsWith('HRA')) {
+        channelWeights = [0.3, 0.3, 0.3, 0.1] // Balanced for HRA
+      } else {
+        channelWeights = [0.35, 0.25, 0.25, 0.15] // Standard distribution
+      }
+      
+      const channelRand = random()
+      let channel: 'Call' | 'SMS' | 'Email' | 'Portal'
+      if (channelRand < channelWeights[0]) channel = 'Call'
+      else if (channelRand < channelWeights[0] + channelWeights[1]) channel = 'SMS'
+      else if (channelRand < channelWeights[0] + channelWeights[1] + channelWeights[2]) channel = 'Email'
+      else channel = 'Portal'
+      
+      // Get purpose-specific topic or condition-specific topic
+      let topic: string
+      if (purpose.startsWith('HRA') || purpose.startsWith('HEDIS') || purpose.startsWith('SDOH') || 
+          purpose === 'AWV' || purpose === 'Medication Adherence' || purpose === 'RAF/Chart Retrieval' || 
+          purpose === 'Care Transition Follow-up') {
+        topic = getPurposeSpecificTopic(purpose)
+      } else {
+        const conditionTopics = getConditionSpecificTopics(member.conditions)
+        topic = conditionTopics.length > 0 ? randomChoice(conditionTopics) : randomChoice(TOPICS)
+      }
+      
+      // Get detailed note based on purpose
+      const note = PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES] 
+        ? randomChoice(PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES])
+        : `Outreach regarding ${topic.toLowerCase()}. ${randomChoice([
+            'Member was responsive and engaged.',
+            'Left voicemail, no response yet.',
+            'Member requested callback.',
+            'Completed successfully.',
+            'Member declined to participate.',
+            'Technical issues encountered.',
+            'Member needs assistance with online portal.',
+            'Language barrier - interpreter needed.',
+            'Member prefers text communication.',
+            'Follow-up scheduled for next week.'
+          ])}`
+      
+      outreach.push({
+        id: `O${String(outreachId).padStart(4, '0')}`,
+        memberId: member.id,
+        memberName: member.name,
+        channel,
+        status,
+        topic,
+        timestamp,
+        agent: randomChoice(AGENTS),
+        note,
+        team: team as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
+        purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
+      })
+      outreachId++
+    }
+  })
+  
+  // Add additional outreach entries for variety (some members will have more)
+  const additionalOutreach = count - outreach.length
+  for (let i = 0; i < additionalOutreach; i++) {
     const member = randomChoice(members)
     const timestamp = randomDate(
-      new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
+      new Date(Date.now() - 120 * 24 * 60 * 60 * 1000), // 120 days ago for more history
       new Date()
     )
     
-    // Bias toward HRA purposes (60-70% weight)
-    const isHra = random() < 0.65
-    const purpose = isHra 
-      ? randomChoice(['HRA Completion', 'HRA Reminder'])
-      : randomChoice(PURPOSES.filter(p => !p.startsWith('HRA')))
+    // Use the same sophisticated purpose selection logic
+    let purpose: string
+    const rand = random()
     
-    // Bias team selection based on purpose
-    const team = purpose.startsWith('HRA') 
-      ? randomChoice(['Quality', 'Member Services'])
-      : randomChoice(TEAMS)
+    if (rand < 0.3) {
+      // HRA purposes (30% weight for additional outreach)
+      purpose = randomChoice(['HRA Completion', 'HRA Reminder'])
+    } else if (rand < 0.5) {
+      // Condition-specific purposes
+      if (member.conditions.includes('Diabetes')) {
+        purpose = randomChoice(['HEDIS - A1c', 'Medication Adherence', 'AWV'])
+      } else if (member.conditions.includes('Depression') || member.conditions.includes('Anxiety')) {
+        purpose = randomChoice(['SDOH—Social and Community', 'Medication Adherence', 'AWV'])
+      } else if (member.conditions.includes('Heart Disease') || member.conditions.includes('Hypertension')) {
+        purpose = randomChoice(['Medication Adherence', 'Care Transition Follow-up', 'AWV'])
+      } else {
+        purpose = randomChoice(['AWV', 'Medication Adherence', 'RAF/Chart Retrieval'])
+      }
+    } else if (rand < 0.7) {
+      // SDOH purposes (20% weight)
+      purpose = randomChoice([
+        'SDOH—Economic Instability', 'SDOH—Food Insecurity', 'SDOH—Housing and Neighborhood',
+        'SDOH—Healthcare Access', 'SDOH—Education', 'SDOH—Social and Community'
+      ])
+    } else {
+      // Other purposes (30% weight for additional outreach)
+      purpose = randomChoice(['RAF/Chart Retrieval', 'Care Transition Follow-up', 'HEDIS - Mammogram'])
+    }
+    
+    const team = getTeamForPurpose(purpose)
+    
+    // More realistic status distribution based on purpose
+    let statusWeights: number[]
+    if (purpose.startsWith('HRA')) {
+      statusWeights = [0.3, 0.4, 0.2, 0.1] // More in-progress for HRA
+    } else if (purpose.startsWith('SDOH')) {
+      statusWeights = [0.5, 0.2, 0.2, 0.1] // More completed for SDOH
+    } else {
+      statusWeights = [0.4, 0.3, 0.2, 0.1] // Standard distribution
+    }
+    
+    const statusRand = random()
+    let status: 'Planned' | 'In-Progress' | 'Completed' | 'Failed'
+    if (statusRand < statusWeights[0]) status = 'Completed'
+    else if (statusRand < statusWeights[0] + statusWeights[1]) status = 'In-Progress'
+    else if (statusRand < statusWeights[0] + statusWeights[1] + statusWeights[2]) status = 'Planned'
+    else status = 'Failed'
+    
+    // Channel selection based on purpose
+    let channelWeights: number[]
+    if (purpose.startsWith('SDOH')) {
+      channelWeights = [0.5, 0.2, 0.2, 0.1] // More calls for SDOH
+    } else if (purpose.startsWith('HRA')) {
+      channelWeights = [0.3, 0.3, 0.3, 0.1] // Balanced for HRA
+    } else {
+      channelWeights = [0.35, 0.25, 0.25, 0.15] // Standard distribution
+    }
+    
+    const channelRand = random()
+    let channel: 'Call' | 'SMS' | 'Email' | 'Portal'
+    if (channelRand < channelWeights[0]) channel = 'Call'
+    else if (channelRand < channelWeights[0] + channelWeights[1]) channel = 'SMS'
+    else if (channelRand < channelWeights[0] + channelWeights[1] + channelWeights[2]) channel = 'Email'
+    else channel = 'Portal'
+    
+    // Get purpose-specific topic or condition-specific topic
+    let topic: string
+    if (purpose.startsWith('HRA') || purpose.startsWith('HEDIS') || purpose.startsWith('SDOH') || 
+        purpose === 'AWV' || purpose === 'Medication Adherence' || purpose === 'RAF/Chart Retrieval' || 
+        purpose === 'Care Transition Follow-up') {
+      topic = getPurposeSpecificTopic(purpose)
+    } else {
+      const conditionTopics = getConditionSpecificTopics(member.conditions)
+      topic = conditionTopics.length > 0 ? randomChoice(conditionTopics) : randomChoice(TOPICS)
+    }
+    
+    // Get detailed note based on purpose
+    const note = PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES] 
+      ? randomChoice(PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES])
+      : `Outreach regarding ${topic.toLowerCase()}. ${randomChoice([
+          'Member was responsive and engaged.',
+          'Left voicemail, no response yet.',
+          'Member requested callback.',
+          'Completed successfully.',
+          'Member declined to participate.',
+          'Technical issues encountered.',
+          'Member needs assistance with online portal.',
+          'Language barrier - interpreter needed.',
+          'Member prefers text communication.',
+          'Follow-up scheduled for next week.'
+        ])}`
     
     outreach.push({
-      id: `O${String(i + 1).padStart(4, '0')}`,
+      id: `O${String(outreachId).padStart(4, '0')}`,
       memberId: member.id,
       memberName: member.name,
-      channel: randomChoice(['Call', 'SMS', 'Email', 'Portal']),
-      status: randomChoice(['Planned', 'In-Progress', 'Completed', 'Failed']),
-      topic: purpose.startsWith('HRA') 
-        ? `Health Risk Assessment - ${purpose === 'HRA Completion' ? 'Follow-up' : 'Reminder'}`
-        : randomChoice(TOPICS),
+      channel,
+      status,
+      topic,
       timestamp,
       agent: randomChoice(AGENTS),
-      note: purpose.startsWith('HRA') 
-        ? `HRA outreach: ${purpose === 'HRA Completion' ? 'Following up on incomplete assessment' : 'Reminding member to complete assessment'}. ${randomChoice([
-          'Member was responsive and engaged.',
-          'Left voicemail, no response yet.',
-          'Member requested callback.',
-          'Completed successfully.',
-          'Member declined to participate.',
-          'Technical issues encountered.'
-        ])}`
-        : `Outreach regarding ${randomChoice(TOPICS).toLowerCase()}. ${randomChoice([
-          'Member was responsive and engaged.',
-          'Left voicemail, no response yet.',
-          'Member requested callback.',
-          'Completed successfully.',
-          'Member declined to participate.',
-          'Technical issues encountered.'
-        ])}`,
+      note,
       team: team as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
-      purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Food' | 'SDOH—Transport' | 'SDOH—Utilities' | 'SDOH—BH'
+      purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
     })
+    outreachId++
   }
   
   return outreach.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -295,7 +841,6 @@ export function generateMockAudit(members: Member[], outreach: Outreach[], count
       memberId: member.id,
       timestamp,
       ip: `${randomInt(192, 223)}.${randomInt(1, 254)}.${randomInt(1, 254)}.${randomInt(1, 254)}`,
-      vendor: member.vendor,
       details: `${action.replace('_', ' ').toLowerCase()} for member ${member.name}`
     })
   }
@@ -317,7 +862,8 @@ export function searchMembers(members: Member[], query: string): Member[] {
     member.planInfo.contractId.toLowerCase().includes(lowercaseQuery) ||
     member.planInfo.pbp.toLowerCase().includes(lowercaseQuery) ||
     member.planInfo.planName.toLowerCase().includes(lowercaseQuery) ||
-    member.planInfo.lob.toLowerCase().includes(lowercaseQuery)
+    member.planInfo.lob.toLowerCase().includes(lowercaseQuery) ||
+    member.memberType.toLowerCase().includes(lowercaseQuery)
   )
 }
 
@@ -331,16 +877,16 @@ export function filterOutreachByStatus(outreach: Outreach[], status: string): Ou
   return outreach.filter(o => o.status === status)
 }
 
-export function getRiskBadgeVariant(risk: number): 'destructive' | 'default' | 'secondary' {
-  if (risk <= 40) return 'secondary'
-  if (risk <= 70) return 'default'
+export function getAberrationRiskBadgeVariant(aberrationRisk: number): 'destructive' | 'default' | 'secondary' {
+  if (aberrationRisk <= 40) return 'secondary'
+  if (aberrationRisk <= 70) return 'default'
   return 'destructive'
 }
 
-export function getRiskLabel(risk: number): string {
-  if (risk <= 40) return 'Low Risk'
-  if (risk <= 70) return 'Medium Risk'
-  return 'High Risk'
+export function getAberrationRiskLabel(aberrationRisk: number): string {
+  if (aberrationRisk <= 40) return 'Low Aberration Risk'
+  if (aberrationRisk <= 70) return 'Medium Aberration Risk'
+  return 'High Aberration Risk'
 }
 
 // Analytics helpers
