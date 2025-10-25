@@ -59,29 +59,22 @@ export default function MockHealthcareCRM() {
     initializeData()
   }, [])
 
-  // Handle URL-based member selection
+  // Handle URL-based member selection - disabled to prevent conflicts
   useEffect(() => {
-    if (members.length > 0) {
-      const memberId = searchParams.get('member')
-      if (memberId) {
-        const member = members.find(m => m.id === memberId)
-        if (member && member.id !== selectedMember?.id) {
-          setSelectedMember(member)
-        }
-      } else if (!selectedMember && members.length > 0) {
-        // Auto-select first member if no URL param and no selection
-        setSelectedMember(members[0])
-      }
+    if (members.length > 0 && !selectedMember) {
+      // Only auto-select first member on initial load
+      console.log('Auto-selecting first member:', members[0].name, members[0].id)
+      setSelectedMember(members[0])
     }
-  }, [members, searchParams, selectedMember])
+  }, [members])
 
   // Handle member selection with URL update
   const handleSelectMember = (member: Member, index?: number) => {
-    console.log('MockHealthcareCRM: handleSelectMember called with:', member.name, member.id, 'index:', index)
     setSelectedMember(member)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('member', member.id)
-    router.replace(`?${params.toString()}`, { scroll: false })
+    // Temporarily disable URL update to test member selection
+    // const params = new URLSearchParams(searchParams.toString())
+    // params.set('member', member.id)
+    // router.replace(`?${params.toString()}`, { scroll: false })
   }
 
   const handleAddOutreach = (data: any) => {

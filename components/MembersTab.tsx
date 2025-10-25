@@ -52,7 +52,6 @@ export function MembersTab({
 
   // Handle member selection with mobile sheet
   const handleSelectMember = (member: Member, index?: number) => {
-    console.log('MembersTab: handleSelectMember called with:', member.name, member.id, 'index:', index)
     onSelectMember(member, index)
     if (index !== undefined) {
       setFocusedMemberIndex(index)

@@ -30,11 +30,14 @@ export function MemberDirectory({
   onSelectMember,
   isMobile = false
 }: MemberDirectoryProps) {
+  
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [aberrationRiskFilter, setAberrationRiskFilter] = useState('All')
   const [conditionFilter, setConditionFilter] = useState('All')
   const [activeIndex, setActiveIndex] = useState(0)
+  
+  // Debug logging removed to reduce console spam
   
   const listRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -62,6 +65,7 @@ export function MemberDirectory({
       )
     }
     
+    // console.log('Filtered members count:', filtered.length, 'Total members:', members.length)
     return filtered
   }, [members, searchQuery, aberrationRiskFilter, conditionFilter])
 
@@ -70,18 +74,20 @@ export function MemberDirectory({
     setActiveIndex(0)
   }, [filteredMembers])
 
+  // Debug: Log filtered members (removed to prevent infinite loops)
+
   // Handle URL-based member selection
   useEffect(() => {
     const memberId = searchParams.get('member')
     if (memberId) {
       const member = members.find(m => m.id === memberId)
       if (member) {
-        onSelectMember(member)
         const index = filteredMembers.findIndex(m => m.id === memberId)
+        onSelectMember(member, index >= 0 ? index : undefined)
         if (index >= 0) setActiveIndex(index)
       }
     } else if (!selectedMember && filteredMembers.length > 0) {
-      onSelectMember(filteredMembers[0])
+      onSelectMember(filteredMembers[0], 0)
     }
   }, [searchParams, members, filteredMembers, selectedMember, onSelectMember])
 
@@ -126,7 +132,6 @@ export function MemberDirectory({
   }, [activeIndex])
 
   const handleMemberClick = (member: Member, index: number) => {
-    console.log('Member clicked:', member.name, member.id, 'index:', index)
     onSelectMember(member, index)
   }
 
@@ -213,10 +218,13 @@ export function MemberDirectory({
                 selectedMember?.id === member.id
                   ? 'border-blue-500 bg-blue-50'
                   : activeIndex === index
-                  ? 'border-blue-300 bg-blue-25'
+                  ? 'border-blue-300 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => handleMemberClick(member, index)}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMemberClick(member, index)
+              }}
               role="option"
               aria-selected={selectedMember?.id === member.id}
               aria-label={`Select member ${member.name}`}
