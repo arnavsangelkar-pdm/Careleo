@@ -572,11 +572,10 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
   const outreach: Outreach[] = []
   let outreachId = 1
   
-  // First, ensure every member has at least 3-6 outreach entries with more variety
+  // Ensure every member has exactly 3 outreach entries with variety
   members.forEach(member => {
-    // Some members should have more outreach (high aberration risk, complex conditions)
-    const baseCount = member.conditions.length > 2 || member.aberrationRisk > 70 ? randomInt(4, 8) : randomInt(3, 6)
-    const memberOutreachCount = baseCount
+    // Each member gets exactly 3 outreach records
+    const memberOutreachCount = 3
     
     for (let j = 0; j < memberOutreachCount; j++) {
       const timestamp = randomDate(
