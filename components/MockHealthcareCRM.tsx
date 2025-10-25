@@ -43,7 +43,10 @@ export default function MockHealthcareCRM() {
         const mockOutreach = generateMockOutreach(mockMembers, 450) // ~3.3 outreach per member
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 200)
         
-        setMembers(mockMembers)
+        // Add SDOH profiles to members
+        const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
+        
+        setMembers(membersWithSdoh)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
         setIsLoading(false)
