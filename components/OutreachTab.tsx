@@ -18,6 +18,7 @@ import {
   getOutreachByChannel,
   type Outreach
 } from '@/lib/mock'
+import { OUTREACH_TEAMS } from '@/lib/constants'
 import { 
   touchesPerMember, 
   monthOverMonth, 
@@ -34,7 +35,8 @@ import {
   User,
   TrendingUp,
   Filter,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react'
 
 interface OutreachTabProps {
@@ -57,7 +59,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
   const [showDetailsSheet, setShowDetailsSheet] = useState(false)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [memberSearchQuery, setMemberSearchQuery] = useState('')
-  const [memberAberrationRiskFilter, setMemberAberrationRiskFilter] = useState('All')
+  const [memberRiskFilter, setMemberRiskFilter] = useState('All')
   const [memberVendorFilter, setMemberVendorFilter] = useState('All')
   const [outreachForm, setOutreachForm] = useState({
     channel: '',
@@ -164,12 +166,12 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
       member.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
     )
     
-    if (memberAberrationRiskFilter !== 'All') {
+    if (memberRiskFilter !== 'All') {
       filtered = filtered.filter(member => {
-        switch (memberAberrationRiskFilter) {
-          case 'Low': return member.aberrationRisk <= 40
-          case 'Medium': return member.aberrationRisk > 40 && member.aberrationRisk <= 70
-          case 'High': return member.aberrationRisk > 70
+        switch (memberRiskFilter) {
+          case 'Low': return member.risk <= 40
+          case 'Medium': return member.risk > 40 && member.risk <= 70
+          case 'High': return member.risk > 70
           default: return true
         }
       })
@@ -180,7 +182,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     }
     
     return filtered
-  }, [members, memberSearchQuery, memberAberrationRiskFilter, memberVendorFilter])
+  }, [members, memberSearchQuery, memberRiskFilter, memberVendorFilter])
 
   const handleAddOutreach = () => {
     if (selectedMembers.length > 0 && outreachForm.channel && outreachForm.status && outreachForm.topic) {
@@ -199,7 +201,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
       setShowAddDialog(false)
       setSelectedMembers([])
       setMemberSearchQuery('')
-      setMemberAberrationRiskFilter('All')
+      setMemberRiskFilter('All')
       setMemberVendorFilter('All')
       setOutreachForm({
         channel: '',
@@ -383,8 +385,8 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           </div>
 
           {/* Outreach List */}
-          <div className="space-y-3">
-            {filteredOutreach.slice(0, 20).map((entry) => {
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {filteredOutreach.map((entry) => {
               const ChannelIcon = getChannelIcon(entry.channel)
               return (
                 <div 
@@ -451,6 +453,44 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
         </CardContent>
       </Card>
 
+      {/* Teams Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Teams
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-4">
+            {OUTREACH_TEAMS.map(team => (
+              <div
+                key={team}
+                className="p-4 border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => {
+                  // Navigate to team detail page
+                  window.location.href = `/outreach/teams/${encodeURIComponent(team)}`
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-gray-900">{team}</h3>
+                  <Users className="h-4 w-4 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-500 mb-3">
+                  Click to view performance, channels, SLAs, and agent activity.
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>
+                    {outreach.filter(o => o.team === team).length} outreach entries
+                  </span>
+                  <span>→</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Add Outreach Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -503,16 +543,16 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Aberration Risk Level</label>
-                    <Select value={memberAberrationRiskFilter} onValueChange={setMemberAberrationRiskFilter}>
+                    <label className="text-sm font-medium text-gray-600 mb-2 block">Abrasion Risk Level</label>
+                    <Select value={memberRiskFilter} onValueChange={setMemberRiskFilter}>
                       <SelectTrigger>
-                        <SelectValue placeholder="All Aberration Risk Levels" />
+                        <SelectValue placeholder="All Abrasion Risk Levels" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="All">All Aberration Risk Levels</SelectItem>
-                        <SelectItem value="Low">Low Aberration Risk (0-40)</SelectItem>
-                        <SelectItem value="Medium">Medium Aberration Risk (41-70)</SelectItem>
-                        <SelectItem value="High">High Aberration Risk (71-100)</SelectItem>
+                        <SelectItem value="All">All Abrasion Risk Levels</SelectItem>
+                        <SelectItem value="Low">Low Abrasion Risk (0-40)</SelectItem>
+                        <SelectItem value="Medium">Medium Abrasion Risk (41-70)</SelectItem>
+                        <SelectItem value="High">High Abrasion Risk (71-100)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

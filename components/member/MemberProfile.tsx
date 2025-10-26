@@ -10,8 +10,8 @@ import { MockQuickAdd } from '../MockQuickAdd'
 // Lazy load the OutreachTimeline component for better performance
 const OutreachTimeline = lazy(() => import('./OutreachTimeline').then(module => ({ default: module.OutreachTimeline })))
 import { 
-  getAberrationRiskBadgeVariant, 
-  getAberrationRiskLabel,
+  getRiskBadgeVariant, 
+  getRiskLabel,
   type Member,
   type Outreach
 } from '@/lib/mock'
@@ -79,7 +79,7 @@ export function MemberProfile({
   // Announce member selection to screen readers
   useEffect(() => {
     if (member) {
-      const announcement = `Selected member: ${member.name}, Aberration Risk level: ${member.aberrationRisk}`
+      const announcement = `Selected member: ${member.name}, Abrasion Risk level: ${member.risk}`
       // Create a live region for screen reader announcements
       const liveRegion = document.createElement('div')
       liveRegion.setAttribute('aria-live', 'polite')
@@ -109,7 +109,7 @@ export function MemberProfile({
         vendor: member.vendor,
         phone: member.phone,
         email: member.email,
-        aberrationRisk: member.aberrationRisk,
+        risk: member.risk,
         conditions: member.conditions,
         planInfo: member.planInfo,
         memberType: member.memberType
@@ -225,11 +225,11 @@ export function MemberProfile({
           <div>
             <label className="text-sm font-medium text-gray-600">Risk Assessment</label>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge variant={getAberrationRiskBadgeVariant(basicInfo.aberrationRisk)}>
-                {basicInfo.aberrationRisk}
+              <Badge variant={getRiskBadgeVariant(basicInfo.risk)}>
+                {basicInfo.risk}
               </Badge>
               <span className="text-sm text-gray-600">
-                {getAberrationRiskLabel(basicInfo.aberrationRisk)}
+                {getRiskLabel(basicInfo.risk)}
               </span>
             </div>
           </div>
@@ -274,9 +274,9 @@ export function MemberProfile({
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{basicInfo.aberrationRisk}</div>
-              <div className="text-sm text-gray-600">Aberration Risk Score</div>
-              <div className="text-xs text-gray-500">{getAberrationRiskLabel(basicInfo.aberrationRisk)}</div>
+              <div className="text-2xl font-bold text-orange-600">{basicInfo.risk}</div>
+              <div className="text-sm text-gray-600">Abrasion Risk Score</div>
+              <div className="text-xs text-gray-500">{getRiskLabel(basicInfo.risk)}</div>
             </div>
           </div>
         </CardContent>

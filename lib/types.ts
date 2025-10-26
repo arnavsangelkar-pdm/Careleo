@@ -4,6 +4,19 @@
 import type { Outreach } from './mock'
 import type { Lob, MemberType } from './constants'
 
+export type Plan =
+  | 'MA HMO'
+  | 'MA PPO'
+  | 'MA PFFS'
+  | 'MA SNP'
+  | 'Medicaid-NY'
+  | 'Medicaid-KY'
+  | 'Medicaid-FL'
+  | 'Medicaid-GA'
+  | 'Medicaid-NV'
+  | 'Medicaid-NC'
+  | 'D-SNP';
+
 export interface ContractAssignment {
   hcontract: string; // e.g., H1234
   pbp: string;       // e.g., 017

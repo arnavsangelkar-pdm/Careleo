@@ -1,6 +1,25 @@
 // Constants for the Careleo CRM demo
 // All data and actions are mocked for demonstration purposes
 
+import type { Plan } from './types'
+
+export const PLANS: Plan[] = [
+  'MA HMO',
+  'MA PPO',
+  'MA PFFS',
+  'MA SNP',
+  'Medicaid-NY',
+  'Medicaid-KY',
+  'Medicaid-FL',
+  'Medicaid-GA',
+  'Medicaid-NV',
+  'Medicaid-NC',
+  'D-SNP',
+];
+
+export const OUTREACH_TEAMS = ['Care Coordination', 'Eligibility & Benefits'] as const;
+export type OutreachTeam = typeof OUTREACH_TEAMS[number];
+
 export const LOB = [
   "Medicare Advantage", 
   "Medicaid", 

@@ -54,7 +54,7 @@ A comprehensive CRM system for healthcare organizations built with Next.js 14, T
 
 ### Member Management
 - **Searchable member directory** with filters
-- **Aberration risk assessment** with color-coded badges
+- **Abrasion risk assessment** with color-coded badges
 - **Member profiles** with demographics and conditions
 - **Quick actions** for outreach (Call, SMS, Email)
 
@@ -69,7 +69,7 @@ A comprehensive CRM system for healthcare organizations built with Next.js 14, T
 - **Channel performance** analysis
 - **Response rate trends** over 14 days
 - **Outreach funnel** visualization
-- **Aberration risk distribution** pie charts
+- **Abrasion risk distribution** pie charts
 
 ### Audit Trail
 - **Complete activity logging** for compliance
@@ -196,7 +196,7 @@ This project is licensed for healthcare organizations. Please ensure compliance 
 The CRM includes comprehensive SDOH capabilities to address social factors that impact health outcomes:
 
 #### Member SDOH Profiles
-- **Social Aberration Risk Score**: 0-100 scale based on member characteristics and outreach patterns
+- **Social Abrasion Risk Score**: 0-100 scale based on member characteristics and outreach patterns
 - **Needs Assessment**: Food, Housing, Transportation, Utilities, Behavioral Health (0-100 each)
 - **Area Context**: ZIP code, ADI (Area Deprivation Index), SVI (Social Vulnerability Index), broadband access, primary language
 - **Resource Recommendations**: 2-3 mock community resources for top needs
@@ -207,7 +207,7 @@ The CRM includes comprehensive SDOH capabilities to address social factors that 
 - **Utilities Assistance Likely**: Members with high utilities assistance needs (≥65)
 - **BH Support Likely**: Members with high behavioral health needs (≥65)
 - **Nudge-Receptive for AWV**: High nudge propensity, low recent touches, low social aberration risk
-- **Negative Sentiment Aberration Risk (SDOH)**: High sentiment aberration risk with SDOH context and frequent touches
+- **Negative Sentiment Abrasion Risk (SDOH)**: High sentiment abrasion risk with SDOH context and frequent touches
 
 #### SDOH Outreach
 - **Community Partnerships Team**: Dedicated team for SDOH outreach

@@ -1,20 +1,20 @@
 // Data generators for the Healthcare CRM
 // Deterministic data generation for consistent results
 
-import type { PlanInfo } from './types'
-import { LOB, MEMBER_TYPES } from './constants'
+import type { PlanInfo, Plan } from './types'
+import { LOB, MEMBER_TYPES, PLANS } from './constants'
 
 export interface Member {
   id: string
   name: string
   dob: string
-  plan: string
+  plan: Plan
   vendor: string
   phone: string
   email: string
   address: string
   conditions: string[]
-  aberrationRisk: number // 0-100
+  risk: number // 0-100 (Abrasion Risk Score)
   planInfo: PlanInfo // New field for health plan contract details
   memberType: 'Member' | 'Prospect' // New field for member vs prospect
   sdoh?: import('./types').MemberSdohProfile
@@ -30,7 +30,7 @@ export interface Outreach {
   timestamp: string
   agent: string
   note: string
-  team: 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships'
+  team?: string // Optional team field for drill-down views
   purpose: 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
 }
 
@@ -88,11 +88,7 @@ const LAST_NAMES = [
   'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'
 ]
 
-const PLAN_NAMES = [
-  'PDM Care Advantage (HMO)', 'PDM Care Plus (PPO)', 'PDM Care Select (HMO)', 
-  'PDM Care Premier (PPO)', 'PDM Care Basic (HMO)', 'PDM Care Elite (PPO)',
-  'PDM Care Standard (HMO)', 'PDM Care Premium (PPO)'
-]
+// Use the PLANS constant from constants.ts instead of PLAN_NAMES
 
 const VENDORS = [
   'BlueCross BlueShield', 'Aetna', 'Cigna', 'UnitedHealth', 'Humana',
@@ -442,14 +438,14 @@ export function generateMockMembers(count: number = 137): Member[] {
       }
     }
     
-    // Generate aberration risk score based on age and conditions
-    let aberrationRisk = Math.min(20 + age * 0.5 + conditions.length * 15, 100)
-    aberrationRisk = Math.max(aberrationRisk + randomInt(-10, 10), 0)
+    // Generate abrasion risk score based on age and conditions
+    let risk = Math.min(20 + age * 0.5 + conditions.length * 15, 100)
+    risk = Math.max(risk + randomInt(-10, 10), 0)
     
     // Generate realistic Medicare Advantage plan info
     const contractId = `H${String(randomInt(1000, 9999))}`
     const pbp = String(randomInt(1, 199)).padStart(3, '0')
-    const planName = randomChoice(PLAN_NAMES)
+    const plan = randomChoice(PLANS)
     const lob = randomChoice(LOB) // Skewed to Medicare Advantage for demo
     const county = randomChoice(COUNTIES)
     
@@ -466,19 +462,19 @@ export function generateMockMembers(count: number = 137): Member[] {
       id: `M${String(i + 1).padStart(4, '0')}`,
       name,
       dob: dob.toISOString().split('T')[0],
-      plan: planName, // Keep for backward compatibility
+      plan,
       vendor: randomChoice(VENDORS),
       phone: `(${randomInt(200, 999)}) ${randomInt(200, 999)}-${randomInt(1000, 9999)}`,
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
       address: `${randomInt(100, 9999)} ${randomChoice(['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln', 'Maple Dr'])}`,
       conditions,
-      aberrationRisk: Math.round(aberrationRisk),
+      risk: Math.round(risk),
       memberType,
       planInfo: {
         contractId,
         pbp,
         lob,
-        planName,
+        planName: plan, // Use the plan as planName for backward compatibility
         county,
         effectiveDate: effectiveDate.toISOString()
       }
@@ -547,23 +543,23 @@ function getPurposeSpecificTopic(purpose: string): string {
 // Helper function to get team based on purpose
 function getTeamForPurpose(purpose: string): string {
   const teamMapping: Record<string, string[]> = {
-    'HRA Completion': ['Quality', 'Member Services'],
-    'HRA Reminder': ['Quality', 'Member Services'],
-    'AWV': ['Quality', 'Member Services', 'Case Management'],
-    'HEDIS - A1c': ['Quality', 'Case Management'],
-    'HEDIS - Mammogram': ['Quality', 'Case Management'],
-    'Medication Adherence': ['Pharmacy', 'Case Management'],
-    'RAF/Chart Retrieval': ['Risk Adjustment', 'Quality'],
-    'Care Transition Follow-up': ['Case Management', 'Member Services'],
-    'SDOH—Economic Instability': ['Community Partnerships', 'Case Management'],
-    'SDOH—Food Insecurity': ['Community Partnerships', 'Case Management'],
-    'SDOH—Housing and Neighborhood': ['Community Partnerships', 'Case Management'],
-    'SDOH—Healthcare Access': ['Member Services', 'Case Management'],
-    'SDOH—Education': ['Community Partnerships', 'Member Services'],
-    'SDOH—Social and Community': ['Community Partnerships', 'Case Management']
+    'HRA Completion': ['Care Coordination', 'Eligibility & Benefits'],
+    'HRA Reminder': ['Care Coordination', 'Eligibility & Benefits'],
+    'AWV': ['Care Coordination', 'Eligibility & Benefits'],
+    'HEDIS - A1c': ['Care Coordination', 'Eligibility & Benefits'],
+    'HEDIS - Mammogram': ['Care Coordination', 'Eligibility & Benefits'],
+    'Medication Adherence': ['Care Coordination', 'Eligibility & Benefits'],
+    'RAF/Chart Retrieval': ['Care Coordination', 'Eligibility & Benefits'],
+    'Care Transition Follow-up': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Economic Instability': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Food Insecurity': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Housing and Neighborhood': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Healthcare Access': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Education': ['Care Coordination', 'Eligibility & Benefits'],
+    'SDOH—Social and Community': ['Care Coordination', 'Eligibility & Benefits']
   }
   
-  const teams = teamMapping[purpose] || TEAMS
+  const teams = teamMapping[purpose] || ['Care Coordination', 'Eligibility & Benefits']
   return randomChoice(teams)
 }
 
@@ -685,7 +681,7 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
         timestamp,
         agent: randomChoice(AGENTS),
         note,
-        team: team as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
+        team: team, // Assign team for drill-down views
         purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
       })
       outreachId++
@@ -803,7 +799,7 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
       timestamp,
       agent: randomChoice(AGENTS),
       note,
-      team: team as 'Risk Adjustment' | 'Quality' | 'Member Services' | 'Case Management' | 'Pharmacy' | 'Community Partnerships',
+      team: team, // Assign team for drill-down views
       purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
     })
     outreachId++
@@ -876,16 +872,16 @@ export function filterOutreachByStatus(outreach: Outreach[], status: string): Ou
   return outreach.filter(o => o.status === status)
 }
 
-export function getAberrationRiskBadgeVariant(aberrationRisk: number): 'destructive' | 'default' | 'secondary' {
-  if (aberrationRisk <= 40) return 'secondary'
-  if (aberrationRisk <= 70) return 'default'
+export function getRiskBadgeVariant(risk: number): 'destructive' | 'default' | 'secondary' {
+  if (risk <= 40) return 'secondary'
+  if (risk <= 70) return 'default'
   return 'destructive'
 }
 
-export function getAberrationRiskLabel(aberrationRisk: number): string {
-  if (aberrationRisk <= 40) return 'Low Aberration Risk'
-  if (aberrationRisk <= 70) return 'Medium Aberration Risk'
-  return 'High Aberration Risk'
+export function getRiskLabel(risk: number): string {
+  if (risk <= 40) return 'Low Abrasion Risk'
+  if (risk <= 70) return 'Medium Abrasion Risk'
+  return 'High Abrasion Risk'
 }
 
 // Analytics helpers

@@ -82,7 +82,7 @@ export function formatMembersForCSV(memberEntries: any[]) {
     'Email': member.email,
     'Address': member.address,
     'Conditions': member.conditions.join('; '),
-    'Aberration Risk Score': member.aberrationRisk
+    'Abrasion Risk Score': member.risk
   }))
 }
 

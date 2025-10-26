@@ -78,7 +78,7 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [teamFilter, setTeamFilter] = useState<string>('All')
-  const [aberrationRiskFilter, setAberrationRiskFilter] = useState<string>('All')
+  const [riskFilter, setRiskFilter] = useState<string>('All')
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [bulkOutreachDialog, setBulkOutreachDialog] = useState(false)
   const [bulkOutreachData, setBulkOutreachData] = useState({
@@ -116,9 +116,9 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
       })
     }
     
-    if (aberrationRiskFilter !== 'All') {
+    if (riskFilter !== 'All') {
       filtered = filtered.filter(member => {
-        switch (aberrationRiskFilter) {
+        switch (riskFilter) {
           case 'Low': return member.signals.nudgePropensity <= 40
           case 'Medium': return member.signals.nudgePropensity > 40 && member.signals.nudgePropensity <= 70
           case 'High': return member.signals.nudgePropensity > 70
@@ -128,7 +128,7 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
     }
     
     return filtered
-  }, [selectedCohort, searchQuery, teamFilter, aberrationRiskFilter, outreach])
+  }, [selectedCohort, searchQuery, teamFilter, riskFilter, outreach])
 
   const handleExportCSV = () => {
     if (!selectedCohort || filteredCohortMembers.length === 0) return
@@ -319,15 +319,15 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
                           </SelectContent>
                         </Select>
                         
-                        <Select value={aberrationRiskFilter} onValueChange={setAberrationRiskFilter}>
+                        <Select value={riskFilter} onValueChange={setRiskFilter}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Filter by Aberration Risk" />
+                            <SelectValue placeholder="Filter by Abrasion Risk" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="All">All Aberration Risk Levels</SelectItem>
-                            <SelectItem value="Low">Low Aberration Risk (0-40)</SelectItem>
-                            <SelectItem value="Medium">Medium Aberration Risk (41-70)</SelectItem>
-                            <SelectItem value="High">High Aberration Risk (71-100)</SelectItem>
+                            <SelectItem value="All">All Abrasion Risk Levels</SelectItem>
+                            <SelectItem value="Low">Low Abrasion Risk (0-40)</SelectItem>
+                            <SelectItem value="Medium">Medium Abrasion Risk (41-70)</SelectItem>
+                            <SelectItem value="High">High Abrasion Risk (71-100)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

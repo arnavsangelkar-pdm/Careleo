@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   searchMembers, 
-  getAberrationRiskBadgeVariant,
+  getRiskBadgeVariant,
   type Member
 } from '@/lib/mock'
+import PlanFilter from '@/components/filters/PlanFilter'
 import { 
   Search, 
   User,
@@ -33,8 +34,9 @@ export function MemberDirectory({
   
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
-  const [aberrationRiskFilter, setAberrationRiskFilter] = useState('All')
+  const [riskFilter, setRiskFilter] = useState('All')
   const [conditionFilter, setConditionFilter] = useState('All')
+  const [selectedPlans, setSelectedPlans] = useState<string[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   
   // Debug logging removed to reduce console spam
@@ -45,17 +47,20 @@ export function MemberDirectory({
   const filteredMembers = React.useMemo(() => {
     let filtered = searchMembers(members, searchQuery)
     
-    if (aberrationRiskFilter !== 'All') {
+    if (riskFilter !== 'All') {
       filtered = filtered.filter(member => {
-        switch (aberrationRiskFilter) {
-          case 'Low': return member.aberrationRisk <= 40
-          case 'Medium': return member.aberrationRisk > 40 && member.aberrationRisk <= 70
-          case 'High': return member.aberrationRisk > 70
+        switch (riskFilter) {
+          case 'Low': return member.risk <= 40
+          case 'Medium': return member.risk > 40 && member.risk <= 70
+          case 'High': return member.risk > 70
           default: return true
         }
       })
     }
     
+    if (selectedPlans.length > 0) {
+      filtered = filtered.filter(member => selectedPlans.includes(member.plan))
+    }
     
     if (conditionFilter !== 'All') {
       filtered = filtered.filter(member => 
@@ -67,7 +72,7 @@ export function MemberDirectory({
     
     // console.log('Filtered members count:', filtered.length, 'Total members:', members.length)
     return filtered
-  }, [members, searchQuery, aberrationRiskFilter, conditionFilter])
+  }, [members, searchQuery, riskFilter, conditionFilter, selectedPlans])
 
   // Reset active index when filters change
   useEffect(() => {
@@ -148,7 +153,7 @@ export function MemberDirectory({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search member, HContract, PBP…"
+              placeholder="Search member, Plan, PBP…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -157,20 +162,29 @@ export function MemberDirectory({
           
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-600 mb-2 block">Aberration Risk Level</label>
-              <Select value={aberrationRiskFilter} onValueChange={setAberrationRiskFilter}>
+              <label className="text-sm font-medium text-gray-600 mb-2 block">Plan</label>
+              <PlanFilter 
+                value={selectedPlans} 
+                onChange={setSelectedPlans}
+                label="Select Plans"
+                multi={true}
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-600 mb-2 block">Abrasion Risk Level</label>
+              <Select value={riskFilter} onValueChange={setRiskFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Aberration Risk Levels" />
+                  <SelectValue placeholder="All Abrasion Risk Levels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Aberration Risk Levels</SelectItem>
-                  <SelectItem value="Low">Low Aberration Risk (0-40)</SelectItem>
-                  <SelectItem value="Medium">Medium Aberration Risk (41-70)</SelectItem>
-                  <SelectItem value="High">High Aberration Risk (71-100)</SelectItem>
+                  <SelectItem value="All">All Abrasion Risk Levels</SelectItem>
+                  <SelectItem value="Low">Low Abrasion Risk (0-40)</SelectItem>
+                  <SelectItem value="Medium">Medium Abrasion Risk (41-70)</SelectItem>
+                  <SelectItem value="High">High Abrasion Risk (71-100)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
             
             <div>
               <label className="text-sm font-medium text-gray-600 mb-2 block">Medical Condition</label>
@@ -232,16 +246,19 @@ export function MemberDirectory({
                   <div>
                     <h3 className="font-medium text-gray-900">{member.name}</h3>
                     <p className="text-sm text-gray-500">
-                      {member.id} • HContract {member.planInfo.contractId} • PBP {member.planInfo.pbp}
+                      {member.id} • Plan {member.plan} • PBP {member.planInfo.pbp}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge variant={getAberrationRiskBadgeVariant(member.aberrationRisk)}>
-                    {member.aberrationRisk}
+                  <Badge variant={getRiskBadgeVariant(member.risk)}>
+                    {member.risk}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     {member.memberType}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {member.plan}
                   </Badge>
                 </div>
               </div>
