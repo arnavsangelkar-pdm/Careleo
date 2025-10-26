@@ -169,7 +169,8 @@ export function countsByTeam(outreach: Outreach[]): TeamCountData[] {
   const teamCounts: Record<string, number> = {}
   
   outreach.forEach(o => {
-    teamCounts[o.team] = (teamCounts[o.team] || 0) + 1
+    const team = o.team || 'Unknown'
+    teamCounts[team] = (teamCounts[team] || 0) + 1
   })
   
   return Object.entries(teamCounts)

@@ -108,7 +108,8 @@ export function getTouchesByTeam(outreach: Outreach[], days: number = 30) {
   outreach.forEach(o => {
     const touchDate = new Date(o.timestamp)
     if (touchDate >= cutoffDate) {
-      teamCounts[o.team] = (teamCounts[o.team] || 0) + 1
+      const team = o.team || 'Unknown'
+      teamCounts[team] = (teamCounts[team] || 0) + 1
     }
   })
   

@@ -40,13 +40,16 @@ const statusColors = {
   Failed: 'bg-red-100 text-red-800'
 }
 
-const teamColors = {
+const teamColors: Record<string, string> = {
+  'Care Coordination': 'bg-purple-100 text-purple-800',
+  'Eligibility & Benefits': 'bg-blue-100 text-blue-800',
   'Risk Adjustment': 'bg-purple-100 text-purple-800',
   'Quality': 'bg-blue-100 text-blue-800',
   'Member Services': 'bg-green-100 text-green-800',
   'Case Management': 'bg-orange-100 text-orange-800',
   'Pharmacy': 'bg-pink-100 text-pink-800',
-  'Community Partnerships': 'bg-teal-100 text-teal-800'
+  'Community Partnerships': 'bg-teal-100 text-teal-800',
+  'Unknown': 'bg-gray-100 text-gray-800'
 }
 
 export function OutreachTimeline({ member, outreach }: OutreachTimelineProps) {
@@ -310,8 +313,8 @@ export function OutreachTimeline({ member, outreach }: OutreachTimelineProps) {
                               <Badge className={`${statusColors[entry.status]} text-xs`}>
                                 {entry.status}
                               </Badge>
-                              <Badge className={`${teamColors[entry.team]} text-xs`}>
-                                {entry.team}
+                              <Badge className={`${teamColors[entry.team || 'Unknown']} text-xs`}>
+                                {entry.team || 'Unknown'}
                               </Badge>
                               <Badge 
                                 variant={entry.purpose.startsWith('SDOH') ? 'secondary' : 'outline'} 

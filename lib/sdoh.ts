@@ -90,10 +90,10 @@ export function estimateNeeds(member: Member, outreach: Outreach[]): MemberSdohP
   // Base needs influenced by conditions and aberration risk - adjusted to ensure some members have high needs
   const baseFoodInsecurity = member.conditions.includes('Diabetes') ? 55 : 35
   const baseHousing = member.conditions.includes('COPD') ? 70 : 40
-  const baseEconomic = member.aberrationRisk > 70 ? 65 : 35
+  const baseEconomic = member.risk > 70 ? 65 : 35
   const baseSocial = member.conditions.some(c => ['Depression', 'Anxiety'].includes(c)) ? 75 : 30
-  const baseHealthcare = member.aberrationRisk > 60 ? 50 : 30
-  const baseEducation = member.aberrationRisk > 50 ? 45 : 25
+  const baseHealthcare = member.risk > 60 ? 50 : 30
+  const baseEducation = member.risk > 50 ? 45 : 25
   
   // Add more variance to ensure some members reach the ≥65 threshold for cohorts
   const variance = 40 // Increased from 20-30 to 40
@@ -196,7 +196,7 @@ export function preferChannelFor(member: Member): 'Call' | 'SMS' | 'Email' | 'Po
     return random() > 0.5 ? 'SMS' : 'Email' // Less intrusive for mental health
   }
   
-  if (member.aberrationRisk > 70) {
+  if (member.risk > 70) {
     return 'Call' // High aberration risk members get personal touch
   }
   
