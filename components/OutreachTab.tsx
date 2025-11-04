@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { SectionTitle } from './SectionTitle'
@@ -16,15 +16,18 @@ import {
   filterOutreachByChannel, 
   filterOutreachByStatus,
   getOutreachByChannel,
+  getTopAndBottomChannels,
+  teams,
   type Outreach
 } from '@/lib/mock'
-import { OUTREACH_TEAMS } from '@/lib/constants'
+import { OUTREACH_TEAMS, PURPOSE_CODES, CODE_TO_PURPOSE, STATUS_DEFINITIONS } from '@/lib/constants'
 import { 
   touchesPerMember, 
   monthOverMonth, 
   getHraOutreach,
   getTopChannel
 } from '@/lib/metrics'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { 
   Search, 
   Phone, 
@@ -136,6 +139,7 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
   const topChannel = channelData.reduce((prev, current) => 
     prev.count > current.count ? prev : current
   )
+  const { top, bottom } = React.useMemo(() => getTopAndBottomChannels(outreach), [outreach])
   
   // Calculate touchpoint metrics
   const avgTouchpoints30d = touchesPerMember(outreach, members, 30)
@@ -279,11 +283,23 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           trend={{ value: momTouchpoints.deltaPct, isPositive: momTouchpoints.direction === 'up' }}
           onClick={() => onNavigateToOutreach?.({ filter: 'last30d' })}
         />
-        <Stat
-          title="Top Channel"
-          value={topChannel.channel}
-          subtitle={`${topChannel.count} interactions`}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Channel Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Top Channel</p>
+                <p className="text-lg font-medium">{top}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Bottom Channel</p>
+                <p className="text-lg font-medium">{bottom}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <Stat
           title="HRA Touches (30d)"
           value={hraTouches30d}
@@ -327,10 +343,11 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Status</SelectItem>
-                <SelectItem value="Planned">Planned</SelectItem>
-                <SelectItem value="In-Progress">In-Progress</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Failed">Failed</SelectItem>
+                {Object.entries(STATUS_DEFINITIONS).map(([status, definition]) => (
+                  <SelectItem key={status} value={status} title={definition}>
+                    {status}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={teamFilter} onValueChange={setTeamFilter}>
@@ -339,12 +356,18 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Teams</SelectItem>
-                <SelectItem value="Risk Adjustment">Risk Adjustment</SelectItem>
-                <SelectItem value="Quality">Quality</SelectItem>
-                <SelectItem value="Member Services">Member Services</SelectItem>
-                <SelectItem value="Case Management">Case Management</SelectItem>
-                <SelectItem value="Pharmacy">Pharmacy</SelectItem>
-                <SelectItem value="Community Partnerships">Community Partnerships</SelectItem>
+                <SelectGroup>
+                  <SelectLabel>Internal Teams</SelectLabel>
+                  {teams.filter(t => t.type === 'internal').map(t => (
+                    <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Vendor Partners</SelectLabel>
+                  {teams.filter(t => t.type === 'vendor').map(t => (
+                    <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
             <Select value={purposeFilter} onValueChange={setPurposeFilter}>
@@ -353,20 +376,14 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Purposes</SelectItem>
-                <SelectItem value="HRA Completion">HRA Completion</SelectItem>
-                <SelectItem value="HRA Reminder">HRA Reminder</SelectItem>
-                <SelectItem value="AWV">AWV</SelectItem>
-                <SelectItem value="HEDIS - A1c">HEDIS - A1c</SelectItem>
-                <SelectItem value="HEDIS - Mammogram">HEDIS - Mammogram</SelectItem>
-                <SelectItem value="Medication Adherence">Medication Adherence</SelectItem>
-                <SelectItem value="RAF/Chart Retrieval">RAF/Chart Retrieval</SelectItem>
-                <SelectItem value="Care Transition Follow-up">Care Transition Follow-up</SelectItem>
-                <SelectItem value="SDOH—Economic Instability">SDOH—Economic Instability</SelectItem>
-                <SelectItem value="SDOH—Food Insecurity">SDOH—Food Insecurity</SelectItem>
-                <SelectItem value="SDOH—Housing and Neighborhood">SDOH—Housing and Neighborhood</SelectItem>
-                <SelectItem value="SDOH—Healthcare Access">SDOH—Healthcare Access</SelectItem>
-                <SelectItem value="SDOH—Education">SDOH—Education</SelectItem>
-                <SelectItem value="SDOH—Social and Community">SDOH—Social and Community</SelectItem>
+                {[...PURPOSE_CODES].sort((a, b) => a.code.localeCompare(b.code)).map((p) => {
+                  const purposeValue = CODE_TO_PURPOSE[p.code] || p.code
+                  return (
+                    <SelectItem key={p.code} value={purposeValue} title={p.label}>
+                      {p.code}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
             <Select value={memberTypeFilter} onValueChange={setMemberTypeFilter}>
@@ -404,9 +421,18 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <h3 className="font-medium text-gray-900">{entry.topic}</h3>
-                          <Badge variant={getStatusVariant(entry.status)} className="text-xs">
-                            {entry.status}
-                          </Badge>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant={getStatusVariant(entry.status)} className="text-xs cursor-help">
+                                  {entry.status}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{STATUS_DEFINITIONS[entry.status] || entry.status}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                         <p className="text-sm text-gray-600 mb-2">{entry.note}</p>
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
@@ -729,9 +755,18 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>
-                    <Badge variant={getStatusVariant(selectedOutreach.status)} className="ml-2">
-                      {selectedOutreach.status}
-                    </Badge>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant={getStatusVariant(selectedOutreach.status)} className="ml-2 cursor-help">
+                            {selectedOutreach.status}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{STATUS_DEFINITIONS[selectedOutreach.status] || selectedOutreach.status}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <div>
                     <span className="text-gray-500">Team:</span>

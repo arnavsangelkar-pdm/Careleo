@@ -10,7 +10,8 @@ import { MemberDirectory } from './member/MemberDirectory'
 import { MemberProfile } from './member/MemberProfile'
 import { 
   type Member,
-  type Outreach
+  type Outreach,
+  dataAsOf
 } from '@/lib/mock'
 
 interface MembersTabProps {
@@ -103,7 +104,15 @@ export function MembersTab({
         <Stat
           title="Total Members"
           value={members.length}
-          subtitle="Active profiles"
+          subtitle={
+            <span>
+              Active profiles
+              <br />
+              <span className="text-xs text-muted-foreground">
+                Data through <span className="font-medium">{new Date(dataAsOf).toLocaleDateString()}</span>
+              </span>
+            </span>
+          }
         />
         <Stat
           title="High Abrasion Risk"

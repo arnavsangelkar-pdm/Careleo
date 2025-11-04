@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { 
   Clock, 
   Phone, 
@@ -18,7 +19,7 @@ import {
   Filter
 } from 'lucide-react'
 import type { Member, Outreach } from '@/lib/mock'
-import { TEAMS, PURPOSES, CHANNELS, STATUS } from '@/lib/constants'
+import { TEAMS, PURPOSES, CHANNELS, STATUS, STATUS_DEFINITIONS } from '@/lib/constants'
 import { calculateMemberSignals } from '@/lib/propensity'
 
 interface OutreachTimelineProps {
@@ -310,9 +311,18 @@ export function OutreachTimeline({ member, outreach }: OutreachTimelineProps) {
                           
                           <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex flex-wrap items-center gap-1 mb-2">
-                              <Badge className={`${statusColors[entry.status]} text-xs`}>
-                                {entry.status}
-                              </Badge>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge className={`${statusColors[entry.status]} text-xs cursor-help`}>
+                                      {entry.status}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{STATUS_DEFINITIONS[entry.status] || entry.status}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                               <Badge className={`${teamColors[entry.team || 'Unknown']} text-xs`}>
                                 {entry.team || 'Unknown'}
                               </Badge>

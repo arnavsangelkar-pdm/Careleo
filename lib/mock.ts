@@ -1,11 +1,13 @@
 // Data generators for the Healthcare CRM
 // Deterministic data generation for consistent results
 
-import type { PlanInfo, Plan } from './types'
-import { LOB, MEMBER_TYPES, PLANS } from './constants'
+import type { PlanInfo, Plan, Cohort } from './types'
+import { LOB, MEMBER_TYPES, PLANS, CONDITION_TO_MEASURES, DATA_AS_OF, VENDOR_TEAMS, type MemberTypeCode } from './constants'
+import type { Measure } from './types'
 
 export interface Member {
   id: string
+  memberId: string // displayable plan ID
   name: string
   dob: string
   plan: Plan
@@ -18,6 +20,9 @@ export interface Member {
   planInfo: PlanInfo // New field for health plan contract details
   memberType: 'Member' | 'Prospect' // New field for member vs prospect
   sdoh?: import('./types').MemberSdohProfile
+  measures?: Measure[] // NEW: program measures derived from conditions
+  cohorts?: string[] // array of cohort ids
+  behavioralType?: import('./constants').MemberTypeCode // derived behavioral classification
 }
 
 export interface Outreach {
@@ -103,7 +108,8 @@ const COUNTIES = [
 const CONDITIONS = [
   'Diabetes', 'Hypertension', 'Heart Disease', 'Asthma', 'COPD',
   'Arthritis', 'Depression', 'Anxiety', 'High Cholesterol', 'Obesity',
-  'Sleep Apnea', 'Chronic Pain', 'Migraine', 'Allergies', 'Thyroid Disorder'
+  'Sleep Apnea', 'Chronic Pain', 'Migraine', 'Allergies', 'Thyroid Disorder',
+  'Breast Cancer Risk', 'Cervical Cancer Risk', 'Colorectal Cancer Risk' // Added for measure mapping
 ]
 
 const AGENTS = [
@@ -458,8 +464,9 @@ export function generateMockMembers(count: number = 137): Member[] {
     effectiveDate.setMonth(randomInt(0, 11))
     effectiveDate.setDate(randomInt(1, 28))
     
-    members.push({
+    const member: Member = {
       id: `M${String(i + 1).padStart(4, '0')}`,
+      memberId: String(100000 + i), // displayable plan ID
       name,
       dob: dob.toISOString().split('T')[0],
       plan,
@@ -478,11 +485,37 @@ export function generateMockMembers(count: number = 137): Member[] {
         county,
         effectiveDate: effectiveDate.toISOString()
       }
-    })
+    }
+    
+    // Derive measures from conditions
+    member.measures = deriveMeasures(member.conditions)
+    
+    members.push(member)
   }
   
   return members
 }
+
+// Derive measures from conditions
+function deriveMeasures(conditions: string[]): Measure[] {
+  const map = new Map<string, Measure>()
+  for (const c of conditions) {
+    const entries = CONDITION_TO_MEASURES[c] || []
+    for (const { code, program } of entries) {
+      const key = `${code}|${program}`
+      const existing = map.get(key)
+      if (!existing) {
+        map.set(key, { code, program, relatedConditions: [c], gap: 'open' })
+      } else {
+        existing.relatedConditions.push(c)
+      }
+    }
+  }
+  return Array.from(map.values())
+}
+
+// Re-export dataAsOf for convenience
+export const dataAsOf = DATA_AS_OF
 
 // Generate SDOH profiles for members (called after outreach generation)
 export function addSdohProfiles(members: Member[], outreach: Outreach[]): Member[] {
@@ -928,4 +961,173 @@ export function getFunnelData(outreach: Outreach[]) {
     { stage: 'Completed', count: completed, percentage: Math.round((completed / total) * 100) },
     { stage: 'Failed', count: failed, percentage: Math.round((failed / total) * 100) }
   ]
+}
+
+/**
+ * Get top and bottom channels from outreach records
+ */
+export function getTopAndBottomChannels(records: Outreach[]): { top: string; bottom: string } {
+  const counts = records.reduce<Record<string, number>>((acc, r) => {
+    acc[r.channel] = (acc[r.channel] || 0) + 1
+    return acc
+  }, {})
+  
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  if (sorted.length === 0) return { top: 'N/A', bottom: 'N/A' }
+  
+  return {
+    top: sorted[0][0],
+    bottom: sorted[sorted.length - 1][0],
+  }
+}
+
+/**
+ * Get teams list with internal and vendor types
+ */
+export const teams = [
+  { name: 'Care Coordination', type: 'internal' as const },
+  { name: 'Eligibility & Benefits', type: 'internal' as const },
+  { name: 'Risk Adjustment', type: 'internal' as const },
+  { name: 'Quality', type: 'internal' as const },
+  { name: 'Member Services', type: 'internal' as const },
+  { name: 'Case Management', type: 'internal' as const },
+  { name: 'Pharmacy', type: 'internal' as const },
+  { name: 'Community Partnerships', type: 'internal' as const },
+  ...VENDOR_TEAMS.map((v) => ({ name: v, type: 'vendor' as const })),
+]
+
+// Cohort definitions for taxonomy
+export const cohorts: Cohort[] = [
+  // HEDIS Gaps
+  { id: 'c_hedis_bcs', name: 'BCS Gap', category: 'hedis', description: 'Breast Cancer Screening' },
+  { id: 'c_hedis_ccs', name: 'CCS Gap', category: 'hedis', description: 'Cervical Cancer Screening' },
+  { id: 'c_hedis_col', name: 'COL Gap', category: 'hedis', description: 'Colorectal Cancer Screening' },
+  { id: 'c_hedis_cbp', name: 'CBP Gap', category: 'hedis', description: 'Controlling High Blood Pressure' },
+  { id: 'c_hedis_hbd', name: 'HBD Gap', category: 'hedis', description: 'Hemoglobin A1c Control for Patients With Diabetes' },
+  { id: 'c_hedis_w30', name: 'W30 Gap', category: 'hedis', description: 'Well-Child Visits (0–30mo)' },
+  // Risk Gaps
+  { id: 'c_risk_high', name: 'High Clinical Risk', category: 'risk', description: 'Members with high clinical risk scores' },
+  { id: 'c_risk_fatigue', name: 'Fatigue Risk', category: 'risk', description: 'Members showing outreach fatigue' },
+  { id: 'c_risk_unreached', name: 'Unable to Contact (UTC)', category: 'risk', description: 'Members unreachable in last 30 days' },
+  // SDOH Needs
+  { id: 'c_sdoh_transport', name: 'Transportation Need', category: 'sdoh', description: 'Housing and Neighborhood - Transportation assistance needed' },
+  { id: 'c_sdoh_food', name: 'Food Insecurity', category: 'sdoh', description: 'Food security assistance needed' },
+  { id: 'c_sdoh_economic', name: 'Economic Instability', category: 'sdoh', description: 'Financial instability support needed' },
+  { id: 'c_sdoh_healthcare', name: 'Healthcare Access', category: 'sdoh', description: 'Healthcare access barriers identified' },
+  { id: 'c_sdoh_education', name: 'Education Need', category: 'sdoh', description: 'Health education and literacy support needed' },
+  { id: 'c_sdoh_social', name: 'Social and Community Need', category: 'sdoh', description: 'Social and community context support needed' },
+]
+
+// Attach cohorts and behavioral types to members
+export function attachCohortsAndTypes(
+  members: Member[],
+  opts?: { recentWindowDays?: number }
+): Member[] {
+  const windowDays = opts?.recentWindowDays ?? 14
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - windowDays)
+  
+  return members.map(m => {
+    const list: string[] = []
+    
+    // Create deterministic hash from member ID to ensure all cohorts get members
+    const idHash = m.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    const hashMod = idHash % 100
+    
+    // Assign cohorts based on conditions and HEDIS measures
+    if (m.conditions?.includes('Diabetes')) {
+      list.push('c_hedis_hbd')
+    }
+    if (m.conditions?.includes('Hypertension')) {
+      list.push('c_hedis_cbp')
+    }
+    if (m.conditions?.includes('Breast Cancer Risk')) {
+      list.push('c_hedis_bcs')
+    }
+    if (m.conditions?.includes('Cervical Cancer Risk')) {
+      list.push('c_hedis_ccs')
+    }
+    if (m.conditions?.includes('Colorectal Cancer Risk')) {
+      list.push('c_hedis_col')
+    }
+    
+    // Ensure all HEDIS cohorts get members using deterministic assignment
+    // Use modulo to distribute members across all HEDIS cohorts
+    const hedisMod = hashMod % 6
+    if (hedisMod === 0 && !list.includes('c_hedis_bcs')) list.push('c_hedis_bcs')
+    if (hedisMod === 1 && !list.includes('c_hedis_ccs')) list.push('c_hedis_ccs')
+    if (hedisMod === 2 && !list.includes('c_hedis_col')) list.push('c_hedis_col')
+    if (hedisMod === 3 && !list.includes('c_hedis_cbp')) list.push('c_hedis_cbp')
+    if (hedisMod === 4 && !list.includes('c_hedis_hbd')) list.push('c_hedis_hbd')
+    if (hedisMod === 5) {
+      // Pediatric members (age-based check) OR assign based on hash
+      const age = new Date().getFullYear() - new Date(m.dob).getFullYear()
+      if (age <= 2.5 || (hashMod % 20 < 3)) {
+        list.push('c_hedis_w30')
+      }
+    }
+    
+    // SDOH-based cohorts - use deterministic assignment to ensure all get members
+    const sdohMod = (hashMod + 17) % 6 // Offset to get different distribution
+    if (sdohMod === 0 || (m.sdoh?.needs.housingAndNeighborhood >= 60)) {
+      list.push('c_sdoh_transport')
+    }
+    if (sdohMod === 1 || (m.sdoh?.needs.foodInsecurity >= 60)) {
+      list.push('c_sdoh_food')
+    }
+    if (sdohMod === 2 || (m.sdoh?.needs.economicInstability >= 60)) {
+      list.push('c_sdoh_economic')
+    }
+    if (sdohMod === 3 || (m.sdoh?.needs.healthcareAccess >= 60)) {
+      list.push('c_sdoh_healthcare')
+    }
+    if (sdohMod === 4 || (m.sdoh?.needs.education >= 60)) {
+      list.push('c_sdoh_education')
+    }
+    if (sdohMod === 5 || (m.sdoh?.needs.socialAndCommunity >= 60)) {
+      list.push('c_sdoh_social')
+    }
+    
+    // Risk-based cohorts - ensure all get members
+    const riskMod = (hashMod + 31) % 3 // Different offset for risk cohorts
+    if (riskMod === 0 || m.risk >= 80) {
+      list.push('c_risk_high')
+    }
+    if (riskMod === 1) {
+      // Assign fatigue risk - ensure it gets members
+      if (m.risk >= 70 || hashMod % 10 < 4) {
+        list.push('c_risk_fatigue')
+      }
+    }
+    if (riskMod === 2) {
+      // Check for unreached members (deterministic based on ID)
+      const lastChar = m.id.charCodeAt(m.id.length - 1) % 10
+      if (lastChar >= 7 || hashMod % 20 < 7) {
+        list.push('c_risk_unreached')
+      }
+    }
+    
+    // Remove duplicates
+    m.cohorts = Array.from(new Set(list))
+    
+    // Derive behavioral type with balanced distribution (~33% each)
+    // Use member ID hash to create deterministic but balanced distribution
+    const typeHash = m.id.charCodeAt(0) + m.id.charCodeAt(m.id.length - 1) + (m.id.charCodeAt(1) || 0)
+    const typeMod = typeHash % 3
+    
+    // Assign behavioral type with roughly equal distribution (33% each)
+    // Use typeMod to split members into thirds
+    if (typeMod === 0) {
+      // One third gets fatigue - high touches or high risk
+      m.behavioralType = 'fatigue'
+    } else if (typeMod === 1) {
+      // One third gets receptive - positive engagement
+      m.behavioralType = 'receptive'
+    } else {
+      // One third gets nudge - moderate risk, low engagement
+      m.behavioralType = 'nudge'
+    }
+    
+    return m
+  })
 }

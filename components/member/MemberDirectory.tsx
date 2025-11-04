@@ -7,11 +7,14 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
-  searchMembers, 
   getRiskBadgeVariant,
   type Member
 } from '@/lib/mock'
+import { searchMembers } from '@/lib/search'
+import { MEASURE_LABEL } from '@/lib/constants'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import PlanFilter from '@/components/filters/PlanFilter'
+import { CohortChips } from './CohortChips'
 import { 
   Search, 
   User,
@@ -153,10 +156,11 @@ export function MemberDirectory({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search member, Plan, PBP…"
+              placeholder="Search name, Member ID, or DOB (e.g., 06/21/1980)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              aria-label="Search members by name, Member ID, or date of birth"
             />
           </div>
           
@@ -246,7 +250,7 @@ export function MemberDirectory({
                   <div>
                     <h3 className="font-medium text-gray-900">{member.name}</h3>
                     <p className="text-sm text-gray-500">
-                      {member.id} • Plan {member.plan} • PBP {member.planInfo.pbp}
+                      ID: {member.memberId || member.id} • Plan {member.plan} • PBP {member.planInfo.pbp}
                     </p>
                   </div>
                 </div>
@@ -274,6 +278,37 @@ export function MemberDirectory({
                       +{member.conditions.length - 3} more
                     </Badge>
                   )}
+                </div>
+              )}
+              {member.measures && member.measures.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <TooltipProvider>
+                    {member.measures.map((m) => (
+                      <Tooltip key={`${m.program}-${m.code}`}>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant={m.program === "Stars" ? "default" : "secondary"}
+                            className="text-xs cursor-help"
+                          >
+                            {m.code}
+                            <span className="sr-only">{MEASURE_LABEL[m.code]}</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-sm">
+                          <p className="font-medium">{m.code} — {MEASURE_LABEL[m.code]}</p>
+                          <p className="text-muted-foreground">Program: {m.program}</p>
+                          {m.relatedConditions?.length ? (
+                            <p className="text-muted-foreground">Linked to: {m.relatedConditions.join(", ")}</p>
+                          ) : null}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </TooltipProvider>
+                </div>
+              )}
+              {member.cohorts && member.cohorts.length > 0 && (
+                <div className="mt-2">
+                  <CohortChips ids={member.cohorts} />
                 </div>
               )}
             </div>

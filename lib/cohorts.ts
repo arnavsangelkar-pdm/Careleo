@@ -465,7 +465,7 @@ export function generateAllCohorts(members: Member[], outreach: Outreach[]): Coh
   const unreachedCohort = ensureMinimumCohortSize(getUnreachedCohort(members, outreach))
   cohorts.push({
     id: 'unreached',
-    name: 'Unreached (Recently Added)',
+    name: 'Unable to Contact (UTC)',
     description: 'Members with no outreach in last 30 days',
     members: unreachedCohort,
     count: unreachedCohort.length,

@@ -21,8 +21,10 @@ import {
   getWeekNumber,
   type AnalyticsFilters
 } from '@/lib/analytics'
-import { TEAMS, PURPOSES, CHANNELS, MEMBER_TYPES } from '@/lib/constants'
+import { TEAMS, PURPOSES, CHANNELS, MEMBER_TYPES, PURPOSE_CODES, CODE_TO_PURPOSE } from '@/lib/constants'
 import type { Outreach, Member } from '@/lib/mock'
+import { topAndBottomChannel, countByChannel, seriesFromCounts } from '@/lib/selectors.analytics'
+import { ChannelDistribution } from '@/components/charts/ChannelDistribution'
 import { 
   RotateCcw,
   Info
@@ -174,6 +176,20 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
     return data
   }, [filteredOutreach, members])
 
+  // Channel distribution data
+  const channelData = useMemo(() => {
+    const counts = countByChannel(filteredOutreach)
+    return seriesFromCounts(counts)
+  }, [filteredOutreach])
+
+  const topBottomChannels = useMemo(() => {
+    return topAndBottomChannel(filteredOutreach)
+  }, [filteredOutreach])
+
+  // Purpose options sorted alphabetically by code
+  const purposeOptions = useMemo(() => {
+    return [...PURPOSE_CODES].sort((a, b) => a.code.localeCompare(b.code))
+  }, [])
 
   const timeWindowLabel = getTimeWindowLabel(filters.window)
 
@@ -253,9 +269,14 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Purposes</SelectItem>
-                  {PURPOSES.map(purpose => (
-                    <SelectItem key={purpose} value={purpose}>{purpose}</SelectItem>
-                  ))}
+                  {purposeOptions.map(p => {
+                    const purposeValue = CODE_TO_PURPOSE[p.code] || p.code
+                    return (
+                      <SelectItem key={p.code} value={purposeValue} title={p.label}>
+                        {p.code}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -276,6 +297,41 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
               </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Channel Performance KPI */}
+      <Card>
+        <CardHeader className="flex flex-col gap-1">
+          <CardTitle>Channel Performance</CardTitle>
+          <p className="text-sm text-muted-foreground">Aggregated over current filters/time window</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-lg font-medium">
+                    Top Channel: <span className="font-semibold">{topBottomChannels.top}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Highest outreach volume channel in the selected window.</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-sm text-muted-foreground">
+                    Bottom Channel: <span className="font-semibold">{topBottomChannels.bottom}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Lowest outreach volume channel in the selected window.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          {channelData.length > 0 && <ChannelDistribution data={channelData} />}
         </CardContent>
       </Card>
 
@@ -329,19 +385,19 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
           </CardContent>
         </Card>
 
-        {/* 2. Touches by Team (30d) */}
+        {/* 2. Touches by Reason (30d) */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span>Touches by Team</span>
+                <span>Touches by Reason</span>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
                       <Info className="h-4 w-4 text-gray-400" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Outreach volume by team within the selected time window</p>
+                      <p>Outreach volume by purpose/reason within the selected time window</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -353,17 +409,17 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={teamData}
+                  data={purposeData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ team, count, percent }) => `${team}: ${count} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ purpose, count, percent }) => `${purpose}: ${count} (${(percent * 100).toFixed(0)}%)`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {teamData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'][index % 6]} />
+                  {purposeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.isHRA ? '#EF4444' : ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'][index % 6]} />
                   ))}
                 </Pie>
                 <RechartsTooltip />

@@ -11,6 +11,7 @@ import {
   generateMockOutreach, 
   generateMockAudit,
   addSdohProfiles,
+  attachCohortsAndTypes,
   type Member,
   type Outreach,
   type AuditEntry
@@ -46,7 +47,10 @@ export default function MockHealthcareCRM() {
         // Add SDOH profiles to members
         const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach)
         
-        setMembers(membersWithSdoh)
+        // Attach cohorts and behavioral types to members
+        const membersWithCohorts = attachCohortsAndTypes(membersWithSdoh)
+        
+        setMembers(membersWithCohorts)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
         setIsLoading(false)

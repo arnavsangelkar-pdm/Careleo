@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 interface StatProps {
   title: string
   value: string | number
-  subtitle?: string
+  subtitle?: string | React.ReactNode
   trend?: {
     value: number
     isPositive: boolean
@@ -22,7 +22,7 @@ export function Stat({ title, value, subtitle, trend, className = '', onClick }:
             <p className="text-sm font-medium text-gray-600">{title}</p>
             <p className="text-2xl font-bold text-gray-900">{value}</p>
             {subtitle && (
-              <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+              <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
             )}
           </div>
           {trend && (

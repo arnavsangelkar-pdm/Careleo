@@ -4,8 +4,11 @@ import React, { useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { MockActionButton } from '../MockActionButton'
 import { MockQuickAdd } from '../MockQuickAdd'
+import { SDOH_SCALES } from '@/lib/constants'
+import { Info } from 'lucide-react'
 
 // Lazy load the OutreachTimeline component for better performance
 const OutreachTimeline = lazy(() => import('./OutreachTimeline').then(module => ({ default: module.OutreachTimeline })))
@@ -21,6 +24,7 @@ import {
   getHraOutreach
 } from '@/lib/metrics'
 import { preferChannelFor } from '@/lib/sdoh'
+import { CohortChips } from './CohortChips'
 import { 
   Phone, 
   MessageSquare, 
@@ -196,6 +200,11 @@ export function MemberProfile({
               Member profile for {basicInfo.name}, ID: {basicInfo.id}
             </div>
             <p className="text-sm text-gray-500">{basicInfo.id}</p>
+            {member.cohorts && member.cohorts.length > 0 && (
+              <div className="mt-2">
+                <CohortChips ids={member.cohorts} />
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -291,87 +300,131 @@ export function MemberProfile({
               <span>SDOH & Context</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Social Risk Meter */}
-            <div>
-              <label className="text-sm font-medium text-gray-600">Social Risk Score</label>
-              <div className="flex items-center space-x-3 mt-1">
-                <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full ${
-                      sdoh.socialRiskScore <= 40 ? 'bg-green-500' :
-                      sdoh.socialRiskScore <= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${sdoh.socialRiskScore}%` }}
-                  ></div>
+          <TooltipProvider>
+            <CardContent className="space-y-4">
+              {/* Social Risk Meter */}
+              <div>
+                <label className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                  Social Risk Score
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="inline-flex items-center p-0 border-0 bg-transparent cursor-help">
+                        <Info className="h-3 w-3 text-gray-400" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{SDOH_SCALES["Social Risk Score"] ?? "Higher score indicates higher need."}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </label>
+                <div className="flex items-center space-x-3 mt-1">
+                  <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${
+                        sdoh.socialRiskScore <= 40 ? 'bg-green-500' :
+                        sdoh.socialRiskScore <= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${sdoh.socialRiskScore}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {sdoh.socialRiskScore}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  {sdoh.socialRiskScore}
-                </span>
               </div>
-            </div>
 
-            {/* Top 2 Needs */}
-            <div>
-              <label className="text-sm font-medium text-gray-600">Top Needs</label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {Object.entries(sdoh.needs)
-                  .sort(([,a], [,b]) => b - a)
-                  .slice(0, 2)
-                  .map(([need, score]) => {
-                    const icons = { 
-                      economicInstability: Heart, 
-                      foodInsecurity: Heart, 
-                      housingAndNeighborhood: Home, 
-                      healthcareAccess: Heart, 
-                      education: Brain, 
-                      socialAndCommunity: Heart 
-                    }
-                    const labels = {
-                      economicInstability: 'Economic',
-                      foodInsecurity: 'Food',
-                      housingAndNeighborhood: 'Housing',
-                      healthcareAccess: 'Healthcare',
-                      education: 'Education',
-                      socialAndCommunity: 'Social'
-                    }
-                    const Icon = icons[need as keyof typeof icons]
-                    const label = labels[need as keyof typeof labels]
-                    return (
-                      <Badge key={need} variant="secondary" className="text-xs flex items-center space-x-1">
-                        <Icon className="h-3 w-3" />
-                        <span>{label}</span>
-                        <span>({score})</span>
-                      </Badge>
-                    )
-                  })}
+              {/* Top 2 Needs */}
+              <div>
+                <label className="text-sm font-medium text-gray-600">Top Needs</label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {Object.entries(sdoh.needs)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 2)
+                    .map(([need, score]) => {
+                      const icons = { 
+                        economicInstability: Heart, 
+                        foodInsecurity: Heart, 
+                        housingAndNeighborhood: Home, 
+                        healthcareAccess: Heart, 
+                        education: Brain, 
+                        socialAndCommunity: Heart 
+                      }
+                      const labels = {
+                        economicInstability: 'Economic',
+                        foodInsecurity: 'Food',
+                        housingAndNeighborhood: 'Housing',
+                        healthcareAccess: 'Healthcare',
+                        education: 'Education',
+                        socialAndCommunity: 'Social'
+                      }
+                      const labelKeys = {
+                        economicInstability: 'Economic Instability',
+                        foodInsecurity: 'Food Insecurity',
+                        housingAndNeighborhood: 'Housing and Neighborhood',
+                        healthcareAccess: 'Healthcare Access',
+                        education: 'Education',
+                        socialAndCommunity: 'Social and Community'
+                      }
+                      const Icon = icons[need as keyof typeof icons]
+                      const label = labels[need as keyof typeof labels]
+                      const labelKey = labelKeys[need as keyof typeof labelKeys]
+                      const scaleText = SDOH_SCALES[labelKey] ?? "Higher score indicates higher need."
+                      return (
+                        <Tooltip key={need}>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="inline-flex items-center rounded-full border border-transparent bg-secondary text-secondary-foreground px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-secondary/80 cursor-help">
+                              <Icon className="h-3 w-3 mr-1" />
+                              <span>{label}</span>
+                              <span className="ml-1">({score})</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">{scaleText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                </div>
               </div>
-            </div>
 
-            {/* Area Context */}
-            <div>
-              <label className="text-sm font-medium text-gray-600">Area Context</label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <div className="flex items-center space-x-1 text-xs">
-                  <MapPin className="h-3 w-3 text-gray-400" />
-                  <span>{sdoh.areaContext.zipCode}</span>
-                </div>
-                <div className="flex items-center space-x-1 text-xs">
-                  <span>ADI: {sdoh.areaContext.adi}/10</span>
-                </div>
-                <div className="flex items-center space-x-1 text-xs">
-                  <span>SVI: {sdoh.areaContext.svi}</span>
-                </div>
-                <div className="flex items-center space-x-1 text-xs">
-                  <Wifi className="h-3 w-3 text-gray-400" />
-                  <span>{sdoh.areaContext.broadbandAccess}%</span>
-                </div>
-                <div className="flex items-center space-x-1 text-xs col-span-2">
-                  <Globe className="h-3 w-3 text-gray-400" />
-                  <span>{sdoh.areaContext.primaryLanguage}</span>
+              {/* Area Context */}
+              <div>
+                <label className="text-sm font-medium text-gray-600">Area Context</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="flex items-center space-x-1 text-xs">
+                    <MapPin className="h-3 w-3 text-gray-400" />
+                    <span>{sdoh.areaContext.zipCode}</span>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="flex items-center space-x-1 text-xs cursor-help border-0 bg-transparent p-0">
+                        <span>ADI: {sdoh.areaContext.adi}/10</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{SDOH_SCALES["ADI"] ?? "Higher score indicates greater deprivation."}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="flex items-center space-x-1 text-xs cursor-help border-0 bg-transparent p-0">
+                        <span>SVI: {sdoh.areaContext.svi}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{SDOH_SCALES["SVI"] ?? "Higher score indicates greater vulnerability."}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <div className="flex items-center space-x-1 text-xs">
+                    <Wifi className="h-3 w-3 text-gray-400" />
+                    <span>{sdoh.areaContext.broadbandAccess}%</span>
+                  </div>
+                  <div className="flex items-center space-x-1 text-xs col-span-2">
+                    <Globe className="h-3 w-3 text-gray-400" />
+                    <span>{sdoh.areaContext.primaryLanguage}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
             {/* Recommended Resources */}
             {sdoh.recommendedResources.length > 0 && (
@@ -416,7 +469,8 @@ export function MemberProfile({
                 </Button>
               </div>
             )}
-          </CardContent>
+            </CardContent>
+          </TooltipProvider>
         </Card>
       )}
 

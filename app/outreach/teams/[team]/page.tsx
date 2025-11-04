@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { generateMockMembers, generateMockOutreach } from '@/lib/mock';
+import { countByChannel, seriesFromCounts } from '@/lib/selectors.analytics';
+import { ChannelDistribution } from '@/components/charts/ChannelDistribution';
 import { 
   Users, 
   Phone, 
@@ -140,7 +142,8 @@ export default function TeamPage({ params }: { params: { team: string } }) {
           <CardTitle>Channel Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <ChannelDistribution data={seriesFromCounts(byChannel)} />
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(byChannel).map(([channel, count]) => {
               const ChannelIcon = getChannelIcon(channel);
               const percentage = total ? Math.round((count / total) * 100) : 0;

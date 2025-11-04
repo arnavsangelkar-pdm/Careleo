@@ -61,5 +61,22 @@ export interface SdohOutreach extends Outreach {
   dataDomain?: 'SDOH'
 }
 
+// Measure interface for program measures
+export interface Measure {
+  code: import('./constants').MeasureCode
+  program: import('./constants').Program
+  relatedConditions: string[] // which conditions led to this mapping
+  gap?: 'open' | 'closed' // optional in demo
+}
+
+// Cohort interface for taxonomy and grouping
+export interface Cohort {
+  id: string
+  name: string
+  category: import('./constants').CohortCategory // 'hedis' | 'risk' | 'sdoh'
+  description?: string
+  size?: number // optional, derived
+}
+
 // Re-export existing types for convenience
 export type { Member, Outreach, AuditEntry } from './mock'
