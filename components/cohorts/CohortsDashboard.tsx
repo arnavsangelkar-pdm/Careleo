@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
@@ -389,12 +389,14 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Teams</SelectItem>
-                  <SelectGroup label="Internal Teams">
+                  <SelectGroup>
+                    <SelectLabel>Internal Teams</SelectLabel>
                     {teams.filter(t => t.type === 'internal').map(t => (
                       <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
                     ))}
                   </SelectGroup>
-                  <SelectGroup label="Vendor Partners">
+                  <SelectGroup>
+                    <SelectLabel>Vendor Partners</SelectLabel>
                     {teams.filter(t => t.type === 'vendor').map(t => (
                       <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
                     ))}

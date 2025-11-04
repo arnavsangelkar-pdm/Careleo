@@ -1069,22 +1069,22 @@ export function attachCohortsAndTypes(
     
     // SDOH-based cohorts - use deterministic assignment to ensure all get members
     const sdohMod = (hashMod + 17) % 6 // Offset to get different distribution
-    if (sdohMod === 0 || (m.sdoh?.needs.housingAndNeighborhood >= 60)) {
+    if (sdohMod === 0 || (m.sdoh?.needs.housingAndNeighborhood && m.sdoh.needs.housingAndNeighborhood >= 60)) {
       list.push('c_sdoh_transport')
     }
-    if (sdohMod === 1 || (m.sdoh?.needs.foodInsecurity >= 60)) {
+    if (sdohMod === 1 || (m.sdoh?.needs.foodInsecurity && m.sdoh.needs.foodInsecurity >= 60)) {
       list.push('c_sdoh_food')
     }
-    if (sdohMod === 2 || (m.sdoh?.needs.economicInstability >= 60)) {
+    if (sdohMod === 2 || (m.sdoh?.needs.economicInstability && m.sdoh.needs.economicInstability >= 60)) {
       list.push('c_sdoh_economic')
     }
-    if (sdohMod === 3 || (m.sdoh?.needs.healthcareAccess >= 60)) {
+    if (sdohMod === 3 || (m.sdoh?.needs.healthcareAccess && m.sdoh.needs.healthcareAccess >= 60)) {
       list.push('c_sdoh_healthcare')
     }
-    if (sdohMod === 4 || (m.sdoh?.needs.education >= 60)) {
+    if (sdohMod === 4 || (m.sdoh?.needs.education && m.sdoh.needs.education >= 60)) {
       list.push('c_sdoh_education')
     }
-    if (sdohMod === 5 || (m.sdoh?.needs.socialAndCommunity >= 60)) {
+    if (sdohMod === 5 || (m.sdoh?.needs.socialAndCommunity && m.sdoh.needs.socialAndCommunity >= 60)) {
       list.push('c_sdoh_social')
     }
     
