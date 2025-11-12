@@ -23,7 +23,8 @@ import {
 } from '@/lib/analytics'
 import { TEAMS, PURPOSES, CHANNELS, MEMBER_TYPES, PURPOSE_CODES, CODE_TO_PURPOSE } from '@/lib/constants'
 import type { Outreach, Member } from '@/lib/mock'
-import { topAndBottomChannel, countByChannel, seriesFromCounts } from '@/lib/selectors.analytics'
+import { topAndBottomChannel, countByChannel, seriesFromCounts, countByReason, topNWithOthers } from '@/lib/selectors.analytics'
+import { ReasonsBar } from './ReasonsBar'
 import { ChannelDistribution } from '@/components/charts/ChannelDistribution'
 import { 
   RotateCcw,
@@ -184,6 +185,16 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
 
   const topBottomChannels = useMemo(() => {
     return topAndBottomChannel(filteredOutreach)
+  }, [filteredOutreach])
+
+  // Phase 1: Reasons bar chart data
+  const reasonsData = useMemo(() => {
+    const reasonCounts = countByReason(filteredOutreach)
+    const series = topNWithOthers(reasonCounts, 8).map(([name, value]) => ({ 
+      name: String(name), 
+      value: Number(value) 
+    }))
+    return series
   }, [filteredOutreach])
 
   // Purpose options sorted alphabetically by code
@@ -385,7 +396,7 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
           </CardContent>
         </Card>
 
-        {/* 2. Touches by Reason (30d) */}
+        {/* 2. Touches by Reason (30d) - Phase 1: Replaced pie with sorted bar */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -397,7 +408,7 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
                       <Info className="h-4 w-4 text-gray-400" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Outreach volume by purpose/reason within the selected time window</p>
+                      <p>Top 8 reasons by outreach volume, remaining grouped as Others</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -406,25 +417,7 @@ export function AnalyticsDashboard({ outreach, members }: AnalyticsDashboardProp
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={purposeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ purpose, count, percent }) => `${purpose}: ${count} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {purposeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.isHRA ? '#EF4444' : ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'][index % 6]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <ReasonsBar data={reasonsData} />
           </CardContent>
         </Card>
 

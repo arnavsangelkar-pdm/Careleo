@@ -67,3 +67,4 @@ export function CohortChips({ ids, maxVisible = 2 }: CohortChipsProps) {
   )
 }
 
+

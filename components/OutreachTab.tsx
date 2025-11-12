@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +17,6 @@ import {
   filterOutreachByStatus,
   getOutreachByChannel,
   getTopAndBottomChannels,
-  teams,
   type Outreach
 } from '@/lib/mock'
 import { OUTREACH_TEAMS, PURPOSE_CODES, CODE_TO_PURPOSE, STATUS_DEFINITIONS } from '@/lib/constants'
@@ -41,6 +40,10 @@ import {
   Plus,
   Users
 } from 'lucide-react'
+import TeamDrillIn from './outreach/TeamDrillIn'
+import { TEAMS_EXPANDED, TIMEFRAMES } from '@/lib/constants'
+import ImportOutreachModal from './outreach/ImportOutreachModal'
+import { loadLocal, saveLocal } from '@/lib/storage'
 
 interface OutreachTabProps {
   outreach: Outreach[]
@@ -51,13 +54,51 @@ interface OutreachTabProps {
 
 export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutreach }: OutreachTabProps) {
   const searchParams = useSearchParams()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [channelFilter, setChannelFilter] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [teamFilter, setTeamFilter] = useState('All')
-  const [purposeFilter, setPurposeFilter] = useState('All')
-  const [memberTypeFilter, setMemberTypeFilter] = useState('All')
+  const router = useRouter()
+  
+  // Load persistent filters from localStorage
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-search', '')
+    }
+    return ''
+  })
+  
+  // Check if we should show team drill-in
+  const teamParam = searchParams.get('team')
+  const showTeamDrillIn = !!teamParam
+  const [channelFilter, setChannelFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-channel', 'All')
+    }
+    return 'All'
+  })
+  const [statusFilter, setStatusFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-status', 'All')
+    }
+    return 'All'
+  })
+  const [teamFilter, setTeamFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-team', 'All')
+    }
+    return 'All'
+  })
+  const [purposeFilter, setPurposeFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-purpose', 'All')
+    }
+    return 'All'
+  })
+  const [memberTypeFilter, setMemberTypeFilter] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-outreach-memberType', 'All')
+    }
+    return 'All'
+  })
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [selectedOutreach, setSelectedOutreach] = useState<Outreach | null>(null)
   const [showDetailsSheet, setShowDetailsSheet] = useState(false)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
@@ -71,7 +112,44 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     note: ''
   })
 
-  // Apply URL-based filters on component mount
+  // Persist filters to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-search', searchQuery)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-channel', channelFilter)
+    }
+  }, [channelFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-status', statusFilter)
+    }
+  }, [statusFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-team', teamFilter)
+    }
+  }, [teamFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-purpose', purposeFilter)
+    }
+  }, [purposeFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-outreach-memberType', memberTypeFilter)
+    }
+  }, [memberTypeFilter])
+
+  // Apply URL-based filters on component mount (override localStorage if present)
   useEffect(() => {
     const memberId = searchParams.get('member')
     const window = searchParams.get('window')
@@ -80,8 +158,18 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     const channel = searchParams.get('channel')
     const memberType = searchParams.get('memberType')
 
+    // Only set search query if memberId is explicitly in URL (for navigation from Members tab)
+    // If memberId is removed from URL, clear the search query and localStorage
     if (memberId) {
       setSearchQuery(memberId)
+    } else {
+      // Clear search query if member param is not in URL
+      // This prevents member selection from Members tab carrying over
+      setSearchQuery('')
+      // Also clear from localStorage to prevent it from being restored
+      if (typeof window !== 'undefined') {
+        saveLocal('flt-outreach-search', '')
+      }
     }
     if (window === 'last30d') {
       // This would filter to last 30 days - handled in filteredOutreach
@@ -256,6 +344,11 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
     setShowDetailsSheet(true)
   }
 
+  // If team query param exists, show drill-in view
+  if (showTeamDrillIn) {
+    return <TeamDrillIn rows={outreach} />
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -263,10 +356,16 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           title="Outreach Management" 
           subtitle="Track and manage member outreach campaigns across all channels"
         />
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Outreach
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Outreach
+          </Button>
+          <Button onClick={() => setShowImportModal(true)} className="bg-blue-600 text-white hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Import Outreach
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -308,6 +407,83 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           onClick={() => onNavigateToOutreach?.({ filter: 'hra' })}
         />
       </div>
+
+      {/* Teams Filter - Quick Access */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Filter by Team
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Internal Teams */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 text-gray-700">Internal Teams</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={teamFilter === 'All' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTeamFilter('All')}
+                className="px-4 py-2"
+              >
+                All Teams
+              </Button>
+              {TEAMS_EXPANDED.filter(t => t.type === 'internal').map(team => {
+                const count = outreach.filter(o => o.team === team.name || o.teamId === team.id).length
+                const isSelected = teamFilter === team.name || teamFilter === team.id
+                return (
+                  <Button
+                    key={team.id}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setTeamFilter(team.name)
+                      // Optionally navigate to drill-in view
+                      // router.push(`?tab=outreach&team=${team.id}&tf=90d`)
+                    }}
+                    className="px-4 py-2"
+                  >
+                    {team.name}
+                    <span className="ml-2 text-xs opacity-70">
+                      ({count})
+                    </span>
+                  </Button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Vendor Partners */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 text-gray-700">Vendor Partners</h3>
+            <div className="flex flex-wrap gap-2">
+              {TEAMS_EXPANDED.filter(t => t.type === 'vendor').map(team => {
+                const count = outreach.filter(o => o.team === team.name || o.teamId === team.id).length
+                const isSelected = teamFilter === team.name || teamFilter === team.id
+                return (
+                  <Button
+                    key={team.id}
+                    variant={isSelected ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => {
+                      setTeamFilter(team.name)
+                      // Optionally navigate to drill-in view
+                      // router.push(`?tab=outreach&team=${team.id}&tf=90d`)
+                    }}
+                    className="px-4 py-2"
+                  >
+                    {team.name}
+                    <span className="ml-2 text-xs opacity-70">
+                      ({count})
+                    </span>
+                  </Button>
+                )
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card>
@@ -358,14 +534,14 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
                 <SelectItem value="All">All Teams</SelectItem>
                 <SelectGroup>
                   <SelectLabel>Internal Teams</SelectLabel>
-                  {teams.filter(t => t.type === 'internal').map(t => (
-                    <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                  {TEAMS_EXPANDED.filter(t => t.type === 'internal').map(t => (
+                    <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
                   ))}
                 </SelectGroup>
                 <SelectGroup>
                   <SelectLabel>Vendor Partners</SelectLabel>
-                  {teams.filter(t => t.type === 'vendor').map(t => (
-                    <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                  {TEAMS_EXPANDED.filter(t => t.type === 'vendor').map(t => (
+                    <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
                   ))}
                 </SelectGroup>
               </SelectContent>
@@ -476,44 +652,6 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Teams Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Teams
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            {OUTREACH_TEAMS.map(team => (
-              <div
-                key={team}
-                className="p-4 border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => {
-                  // Navigate to team detail page
-                  window.location.href = `/outreach/teams/${encodeURIComponent(team)}`
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-gray-900">{team}</h3>
-                  <Users className="h-4 w-4 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-500 mb-3">
-                  Click to view performance, channels, SLAs, and agent activity.
-                </p>
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span>
-                    {outreach.filter(o => o.team === team).length} outreach entries
-                  </span>
-                  <span>→</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
 
@@ -806,6 +944,9 @@ export function OutreachTab({ outreach, members, onAddOutreach, onNavigateToOutr
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Import Outreach Modal */}
+      <ImportOutreachModal open={showImportModal} onClose={() => setShowImportModal(false)} />
     </div>
   )
 }

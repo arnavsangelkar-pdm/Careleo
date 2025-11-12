@@ -262,3 +262,34 @@ export const MEMBER_TYPE_HELP: Record<MemberTypeCode, string> = {
 export const STATUS_LABELS: Record<string, string> = {
   unreached: 'Unable to Contact (UTC)',
 }
+
+// Phase 1: Expanded teams with IDs and types
+export const TEAMS_EXPANDED = [
+  { id: 'care_coord', name: 'Care Coordination', type: 'internal' },
+  { id: 'sdoh', name: 'SDOH Team', type: 'internal' },
+  { id: 'quality', name: 'Quality', type: 'internal' },
+  { id: 'risk_adj', name: 'Risk Adjustment', type: 'internal' },
+  { id: 'vendor_a', name: 'Vendor A', type: 'vendor' },
+  { id: 'vendor_b', name: 'Vendor B', type: 'vendor' },
+  { id: 'vendor_c', name: 'Vendor C', type: 'vendor' },
+  { id: 'vendor_d', name: 'Vendor D', type: 'vendor' },
+] as const
+
+export type TeamId = typeof TEAMS_EXPANDED[number]['id']
+
+// Timeframe options for team drill-in
+export const TIMEFRAMES = [
+  { key: '30d', label: 'Last 30 days', days: 30 },
+  { key: '90d', label: 'Last 90 days', days: 90 },
+  { key: '180d', label: 'Last 180 days', days: 180 },
+] as const
+
+// Abrasion risk buckets
+export const ABRASION_BUCKETS = [
+  { key: 'low', label: 'Low', min: 0, max: 39 },
+  { key: 'med', label: 'Medium', min: 40, max: 69 },
+  { key: 'high', label: 'High', min: 70, max: 100 },
+] as const
+
+// HEDIS measure codes (already defined above, but exporting as array)
+export const MEASURE_CODES = ['BCS', 'CCS', 'COL', 'CBP', 'HBD', 'W30'] as const

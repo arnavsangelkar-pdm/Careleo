@@ -2,7 +2,7 @@
 // Deterministic data generation for consistent results
 
 import type { PlanInfo, Plan, Cohort } from './types'
-import { LOB, MEMBER_TYPES, PLANS, CONDITION_TO_MEASURES, DATA_AS_OF, VENDOR_TEAMS, type MemberTypeCode } from './constants'
+import { LOB, MEMBER_TYPES, PLANS, CONDITION_TO_MEASURES, DATA_AS_OF, VENDOR_TEAMS, PURPOSE_TO_CODE, type MemberTypeCode } from './constants'
 import type { Measure } from './types'
 
 export interface Member {
@@ -17,6 +17,7 @@ export interface Member {
   address: string
   conditions: string[]
   risk: number // 0-100 (Abrasion Risk Score)
+  abrasionRisk?: number // Phase 1: alias for risk (0-100)
   planInfo: PlanInfo // New field for health plan contract details
   memberType: 'Member' | 'Prospect' // New field for member vs prospect
   sdoh?: import('./types').MemberSdohProfile
@@ -36,7 +37,10 @@ export interface Outreach {
   agent: string
   note: string
   team?: string // Optional team field for drill-down views
+  teamId?: import('./constants').TeamId // Phase 1: strongly-typed team id
   purpose: 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
+  purposeCode?: string // Phase 1: e.g., BCS, HBD, etc.
+  occurredAt?: string // Phase 1: ISO timestamp (alias for timestamp)
 }
 
 export interface AuditEntry {
@@ -476,6 +480,7 @@ export function generateMockMembers(count: number = 137): Member[] {
       address: `${randomInt(100, 9999)} ${randomChoice(['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln', 'Maple Dr'])}`,
       conditions,
       risk: Math.round(risk),
+      abrasionRisk: Math.round(risk), // Phase 1: alias for risk
       memberType,
       planInfo: {
         contractId,
@@ -519,7 +524,14 @@ export const dataAsOf = DATA_AS_OF
 
 // Generate SDOH profiles for members (called after outreach generation)
 export function addSdohProfiles(members: Member[], outreach: Outreach[]): Member[] {
-  const { generateSdohProfile } = require('./sdoh')
+  // Dynamic import to avoid circular dependencies
+  const sdohModule = require('./sdoh')
+  const generateSdohProfile = sdohModule.generateSdohProfile || sdohModule.default?.generateSdohProfile
+  
+  if (!generateSdohProfile) {
+    console.warn('generateSdohProfile not found, skipping SDOH profiles')
+    return members
+  }
   
   return members.map(member => ({
     ...member,
@@ -573,26 +585,27 @@ function getPurposeSpecificTopic(purpose: string): string {
   return purposeTopics[purpose] || randomChoice(TOPICS)
 }
 
-// Helper function to get team based on purpose
+// Helper function to get team based on purpose - ensures all teams get outreach
 function getTeamForPurpose(purpose: string): string {
+  // Map purposes to teams, ensuring all teams (including vendors) get assignments
   const teamMapping: Record<string, string[]> = {
-    'HRA Completion': ['Care Coordination', 'Eligibility & Benefits'],
-    'HRA Reminder': ['Care Coordination', 'Eligibility & Benefits'],
-    'AWV': ['Care Coordination', 'Eligibility & Benefits'],
-    'HEDIS - A1c': ['Care Coordination', 'Eligibility & Benefits'],
-    'HEDIS - Mammogram': ['Care Coordination', 'Eligibility & Benefits'],
-    'Medication Adherence': ['Care Coordination', 'Eligibility & Benefits'],
-    'RAF/Chart Retrieval': ['Care Coordination', 'Eligibility & Benefits'],
-    'Care Transition Follow-up': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Economic Instability': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Food Insecurity': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Housing and Neighborhood': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Healthcare Access': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Education': ['Care Coordination', 'Eligibility & Benefits'],
-    'SDOH—Social and Community': ['Care Coordination', 'Eligibility & Benefits']
+    'HRA Completion': ['Care Coordination', 'Quality', 'Risk Adjustment', 'Vendor A', 'Vendor B'],
+    'HRA Reminder': ['Care Coordination', 'Quality', 'Vendor A', 'Vendor C'],
+    'AWV': ['Care Coordination', 'Quality', 'Risk Adjustment', 'Vendor A', 'Vendor B', 'Vendor C'],
+    'HEDIS - A1c': ['Quality', 'Care Coordination', 'Vendor A', 'Vendor B'],
+    'HEDIS - Mammogram': ['Quality', 'Care Coordination', 'Vendor A', 'Vendor C'],
+    'Medication Adherence': ['Care Coordination', 'Quality', 'Vendor B', 'Vendor C'],
+    'RAF/Chart Retrieval': ['Risk Adjustment', 'Care Coordination', 'Vendor A', 'Vendor B', 'Vendor C', 'Vendor D'],
+    'Care Transition Follow-up': ['Care Coordination', 'Quality', 'Vendor A', 'Vendor B'],
+    'SDOH—Economic Instability': ['SDOH Team', 'Care Coordination', 'Vendor A', 'Vendor B'],
+    'SDOH—Food Insecurity': ['SDOH Team', 'Care Coordination', 'Vendor A', 'Vendor C'],
+    'SDOH—Housing and Neighborhood': ['SDOH Team', 'Care Coordination', 'Vendor B', 'Vendor C'],
+    'SDOH—Healthcare Access': ['SDOH Team', 'Care Coordination', 'Vendor A', 'Vendor D'],
+    'SDOH—Education': ['SDOH Team', 'Care Coordination', 'Vendor A', 'Vendor B', 'Vendor C'],
+    'SDOH—Social and Community': ['SDOH Team', 'Care Coordination', 'Vendor A', 'Vendor B', 'Vendor C', 'Vendor D']
   }
   
-  const teams = teamMapping[purpose] || ['Care Coordination', 'Eligibility & Benefits']
+  const teams = teamMapping[purpose] || ['Care Coordination', 'Quality', 'Risk Adjustment', 'SDOH Team', 'Vendor A', 'Vendor B', 'Vendor C', 'Vendor D']
   return randomChoice(teams)
 }
 
@@ -704,6 +717,26 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
             'Follow-up scheduled for next week.'
           ])}`
       
+      // Phase 1: Map purpose to purposeCode and assign teamId
+      const purposeCode = PURPOSE_TO_CODE[purpose] || purpose.substring(0, 3).toUpperCase()
+      
+      // Map team name to teamId - includes all teams from TEAMS_EXPANDED
+      const teamIdMap: Record<string, import('./constants').TeamId> = {
+        'Care Coordination': 'care_coord',
+        'SDOH Team': 'sdoh',
+        'Quality': 'quality',
+        'Risk Adjustment': 'risk_adj',
+        'Eligibility & Benefits': 'care_coord',
+        'Vendor A': 'vendor_a',
+        'Vendor B': 'vendor_b',
+        'Vendor C': 'vendor_c',
+        'Vendor D': 'vendor_d',
+      }
+      // Default to vendor_a if team name contains "Vendor" but doesn't match exactly
+      const teamId = teamIdMap[team] || (team.includes('Vendor') ? 
+        (team.includes('B') ? 'vendor_b' : team.includes('C') ? 'vendor_c' : team.includes('D') ? 'vendor_d' : 'vendor_a') 
+        : 'care_coord')
+      
       outreach.push({
         id: `O${String(outreachId).padStart(4, '0')}`,
         memberId: member.id,
@@ -715,7 +748,10 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
         agent: randomChoice(AGENTS),
         note,
         team: team, // Assign team for drill-down views
-        purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
+        teamId, // Phase 1: strongly-typed team id
+        purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community',
+        purposeCode, // Phase 1: purpose code (e.g., BCS, HBD)
+        occurredAt: timestamp // Phase 1: alias for timestamp
       })
       outreachId++
     }
@@ -822,6 +858,24 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
           'Follow-up scheduled for next week.'
         ])}`
     
+    // Phase 1: Map purpose to purposeCode and assign teamId - includes all teams from TEAMS_EXPANDED
+    const purposeCode = PURPOSE_TO_CODE[purpose] || purpose.substring(0, 3).toUpperCase()
+    const teamIdMap: Record<string, import('./constants').TeamId> = {
+      'Care Coordination': 'care_coord',
+      'SDOH Team': 'sdoh',
+      'Quality': 'quality',
+      'Risk Adjustment': 'risk_adj',
+      'Eligibility & Benefits': 'care_coord',
+      'Vendor A': 'vendor_a',
+      'Vendor B': 'vendor_b',
+      'Vendor C': 'vendor_c',
+      'Vendor D': 'vendor_d',
+    }
+    // Default to vendor_a if team name contains "Vendor" but doesn't match exactly
+    const teamId = teamIdMap[team] || (team.includes('Vendor') ? 
+      (team.includes('B') ? 'vendor_b' : team.includes('C') ? 'vendor_c' : team.includes('D') ? 'vendor_d' : 'vendor_a') 
+      : 'care_coord')
+    
     outreach.push({
       id: `O${String(outreachId).padStart(4, '0')}`,
       memberId: member.id,
@@ -833,9 +887,105 @@ export function generateMockOutreach(members: Member[], count: number = 600): Ou
       agent: randomChoice(AGENTS),
       note,
       team: team, // Assign team for drill-down views
-      purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community'
+      teamId, // Phase 1: strongly-typed team id
+      purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community',
+      purposeCode, // Phase 1: purpose code
+      occurredAt: timestamp // Phase 1: alias for timestamp
     })
     outreachId++
+  }
+  
+  // Ensure all teams have at least some outreach records
+  // Only do this if we have members to assign
+  if (members.length > 0) {
+    const allTeams = ['Care Coordination', 'SDOH Team', 'Quality', 'Risk Adjustment', 'Vendor A', 'Vendor B', 'Vendor C', 'Vendor D']
+    const teamCounts = new Map<string, number>()
+    outreach.forEach(o => {
+      const teamName = o.team || 'Care Coordination'
+      teamCounts.set(teamName, (teamCounts.get(teamName) || 0) + 1)
+    })
+    
+    // For any team with fewer than 5 records, add enough to reach 5
+    allTeams.forEach(teamName => {
+      const currentCount = teamCounts.get(teamName) || 0
+      if (currentCount < 5) {
+        const needed = 5 - currentCount
+        for (let i = 0; i < needed; i++) {
+          const member = randomChoice(members)
+          const timestamp = randomDate(
+            new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+            new Date()
+          )
+          
+          // Assign appropriate purpose based on team
+          let purpose: string
+          if (teamName === 'SDOH Team') {
+            purpose = randomChoice([
+              'SDOH—Economic Instability', 'SDOH—Food Insecurity', 'SDOH—Housing and Neighborhood',
+              'SDOH—Healthcare Access', 'SDOH—Education', 'SDOH—Social and Community'
+            ])
+          } else if (teamName === 'Quality') {
+            purpose = randomChoice(['HEDIS - A1c', 'HEDIS - Mammogram', 'AWV', 'RAF/Chart Retrieval'])
+          } else if (teamName === 'Risk Adjustment') {
+            purpose = randomChoice(['RAF/Chart Retrieval', 'HRA Completion', 'HRA Reminder'])
+          } else if (teamName.startsWith('Vendor')) {
+            purpose = randomChoice(['HRA Completion', 'AWV', 'Medication Adherence', 'Care Transition Follow-up'])
+          } else {
+            purpose = randomChoice(['HRA Completion', 'HRA Reminder', 'AWV', 'Medication Adherence'])
+          }
+          
+          const statusRand = random()
+          let status: 'Planned' | 'In-Progress' | 'Completed' | 'Failed'
+          if (statusRand < 0.4) status = 'Completed'
+          else if (statusRand < 0.7) status = 'In-Progress'
+          else if (statusRand < 0.9) status = 'Planned'
+          else status = 'Failed'
+          
+          const channelRand = random()
+          let channel: 'Call' | 'SMS' | 'Email' | 'Portal'
+          if (channelRand < 0.35) channel = 'Call'
+          else if (channelRand < 0.6) channel = 'SMS'
+          else if (channelRand < 0.85) channel = 'Email'
+          else channel = 'Portal'
+          
+          const topic = getPurposeSpecificTopic(purpose)
+          const note = PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES] 
+            ? randomChoice(PURPOSE_NOTES[purpose as keyof typeof PURPOSE_NOTES])
+            : `Outreach regarding ${topic.toLowerCase()}.`
+          
+          const purposeCode = PURPOSE_TO_CODE[purpose] || purpose.substring(0, 3).toUpperCase()
+          const teamIdMap: Record<string, import('./constants').TeamId> = {
+            'Care Coordination': 'care_coord',
+            'SDOH Team': 'sdoh',
+            'Quality': 'quality',
+            'Risk Adjustment': 'risk_adj',
+            'Vendor A': 'vendor_a',
+            'Vendor B': 'vendor_b',
+            'Vendor C': 'vendor_c',
+            'Vendor D': 'vendor_d',
+          }
+          const teamId = teamIdMap[teamName] || 'care_coord'
+          
+          outreach.push({
+            id: `O${String(outreachId).padStart(4, '0')}`,
+            memberId: member.id,
+            memberName: member.name,
+            channel,
+            status,
+            topic,
+            timestamp,
+            agent: randomChoice(AGENTS),
+            note,
+            team: teamName,
+            teamId,
+            purpose: purpose as 'HRA Completion' | 'HRA Reminder' | 'AWV' | 'HEDIS - A1c' | 'HEDIS - Mammogram' | 'Medication Adherence' | 'RAF/Chart Retrieval' | 'Care Transition Follow-up' | 'SDOH—Economic Instability' | 'SDOH—Food Insecurity' | 'SDOH—Housing and Neighborhood' | 'SDOH—Healthcare Access' | 'SDOH—Education' | 'SDOH—Social and Community',
+            purposeCode,
+            occurredAt: timestamp
+          })
+          outreachId++
+        }
+      }
+    })
   }
   
   return outreach.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

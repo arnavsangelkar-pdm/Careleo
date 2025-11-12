@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { 
   generateMockMembers, 
@@ -21,7 +22,8 @@ import { OutreachTab } from './OutreachTab'
 import { AuditTab } from './AuditTab'
 import { CohortsDashboard } from './cohorts/CohortsDashboard'
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard'
-import { Shield, Users, MessageSquare, BarChart3, FileText, Target } from 'lucide-react'
+import { Shield, Users, MessageSquare, BarChart3, FileText, Target, LayoutDashboard } from 'lucide-react'
+import Link from 'next/link'
 import { LoadingShimmer } from './LoadingShimmer'
 
 export default function MockHealthcareCRM() {
@@ -64,8 +66,10 @@ export default function MockHealthcareCRM() {
   }, [])
 
   // Handle URL-based member selection and initial member selection
+  // Only apply member selection when on the Members tab
   useEffect(() => {
-    if (members.length > 0) {
+    const currentTab = searchParams.get('tab') || 'members'
+    if (members.length > 0 && currentTab === 'members') {
       const memberIdFromUrl = searchParams.get('member')
       if (memberIdFromUrl && members.some(m => m.id === memberIdFromUrl)) {
         // URL has a valid member ID, use it
@@ -75,6 +79,9 @@ export default function MockHealthcareCRM() {
         console.log('Auto-selecting first member:', members[0].name, members[0].id)
         setSelectedMemberId(members[0].id)
       }
+    } else if (currentTab !== 'members') {
+      // Clear member selection when not on Members tab
+      setSelectedMemberId(null)
     }
   }, [members, searchParams, selectedMemberId])
 
@@ -163,6 +170,12 @@ export default function MockHealthcareCRM() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Analytics Dashboard</span>
+                </Button>
+              </Link>
               <Badge variant="outline" className="text-xs">
                 HITRUST-Target
               </Badge>
@@ -187,7 +200,16 @@ export default function MockHealthcareCRM() {
             </div>
           </div>
         ) : (
-          <Tabs defaultValue="members" className="space-y-6">
+          <Tabs defaultValue={searchParams.get('tab') || 'members'} className="space-y-6" onValueChange={(value) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('tab', value)
+            // Clear member selection when switching away from Members tab
+            if (value !== 'members') {
+              params.delete('member')
+              setSelectedMemberId(null)
+            }
+            router.replace(`?${params.toString()}`, { scroll: false })
+          }}>
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -211,7 +233,7 @@ export default function MockHealthcareCRM() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="members" className="space-y-6">
+          <TabsContent value="members" className="space-y-6 tab-members">
             <MembersTab
               members={members}
               outreach={outreach}
@@ -229,7 +251,7 @@ export default function MockHealthcareCRM() {
             />
           </TabsContent>
 
-          <TabsContent value="outreach" className="space-y-6">
+          <TabsContent value="outreach" className="space-y-6 tab-outreach">
             <OutreachTab
               outreach={outreach}
               members={members}
@@ -244,7 +266,7 @@ export default function MockHealthcareCRM() {
             />
           </TabsContent>
 
-          <TabsContent value="cohorts" className="space-y-6">
+          <TabsContent value="cohorts" className="space-y-6 tab-cohorts">
             <CohortsDashboard
               members={members}
               outreach={outreach}
@@ -252,14 +274,14 @@ export default function MockHealthcareCRM() {
             />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="analytics" className="space-y-6 tab-analytics">
             <AnalyticsDashboard
               outreach={outreach}
               members={members}
             />
           </TabsContent>
 
-          <TabsContent value="audit" className="space-y-6">
+          <TabsContent value="audit" className="space-y-6 tab-audit">
             <AuditTab
               audit={audit}
             />

@@ -68,3 +68,32 @@ export function toMemberCsvRows(list: Member[]) {
   }))
 }
 
+/**
+ * Phase 1: Filter members by HEDIS gap (open gaps only)
+ */
+export function filterByHedis(list: Member[], codes: string[]) {
+  if (!codes?.length) return list
+  return list.filter(m => 
+    m.measures?.some(me => 
+      codes.includes(me.code) && me.gap !== 'closed'
+    )
+  )
+}
+
+/**
+ * Phase 1: Filter members by abrasion risk bucket
+ */
+export function filterByAbrasionBucket(
+  list: Member[],
+  bucket?: 'low' | 'med' | 'high'
+) {
+  if (!bucket) return list
+  const ranges = { low: [0, 39], med: [40, 69], high: [70, 100] } as const
+  const [min, max] = ranges[bucket]
+  return list.filter(m => {
+    const risk = m.abrasionRisk ?? m.risk ?? -1
+    return risk >= min && risk <= max
+  })
+}
+
+

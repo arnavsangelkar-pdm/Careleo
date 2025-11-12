@@ -33,3 +33,25 @@ export function seriesFromCounts(counts: ChannelCounts): Array<{ name: string; v
   return Object.entries(counts).map(([name, value]) => ({ name, value }))
 }
 
+/**
+ * Phase 1: Count outreach by reason/purpose code
+ */
+export function countByReason(rows: Outreach[]) {
+  return rows.reduce<Record<string, number>>((a, r) => {
+    const k = r.purposeCode || r.purpose || 'Other'
+    a[k] = (a[k] || 0) + 1
+    return a
+  }, {})
+}
+
+/**
+ * Phase 1: Get top N reasons with Others bucket for remaining
+ */
+export function topNWithOthers(counts: Record<string, number>, n = 8) {
+  const items = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  const head = items.slice(0, n)
+  const tail = items.slice(n)
+  const others = tail.reduce((s, [, v]) => s + v, 0)
+  return others ? [...head, ['Others', others]] : head
+}
+

@@ -1,24 +1,17 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   getRiskBadgeVariant,
   type Member
 } from '@/lib/mock'
-import { searchMembers } from '@/lib/search'
 import { MEASURE_LABEL } from '@/lib/constants'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import PlanFilter from '@/components/filters/PlanFilter'
 import { CohortChips } from './CohortChips'
 import { 
-  Search, 
-  User,
-  Filter
+  User
 } from 'lucide-react'
 
 interface MemberDirectoryProps {
@@ -34,48 +27,14 @@ export function MemberDirectory({
   onSelectMember,
   isMobile = false
 }: MemberDirectoryProps) {
-  
-  const searchParams = useSearchParams()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [riskFilter, setRiskFilter] = useState('All')
-  const [conditionFilter, setConditionFilter] = useState('All')
-  const [selectedPlans, setSelectedPlans] = useState<string[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
-  
-  // Debug logging removed to reduce console spam
   
   const listRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const filteredMembers = React.useMemo(() => {
-    let filtered = searchMembers(members, searchQuery)
-    
-    if (riskFilter !== 'All') {
-      filtered = filtered.filter(member => {
-        switch (riskFilter) {
-          case 'Low': return member.risk <= 40
-          case 'Medium': return member.risk > 40 && member.risk <= 70
-          case 'High': return member.risk > 70
-          default: return true
-        }
-      })
-    }
-    
-    if (selectedPlans.length > 0) {
-      filtered = filtered.filter(member => selectedPlans.includes(member.plan))
-    }
-    
-    if (conditionFilter !== 'All') {
-      filtered = filtered.filter(member => 
-        member.conditions.some(condition => 
-          condition.toLowerCase().includes(conditionFilter.toLowerCase())
-        )
-      )
-    }
-    
-    // console.log('Filtered members count:', filtered.length, 'Total members:', members.length)
-    return filtered
-  }, [members, searchQuery, riskFilter, conditionFilter, selectedPlans])
+  // Members are already filtered by parent component (MembersTab)
+  // No need to filter again here
+  const filteredMembers = members
 
   // Reset active index when filters change
   useEffect(() => {
@@ -139,8 +98,7 @@ export function MemberDirectory({
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <Card>
+    <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Member Directory</span>
@@ -151,63 +109,7 @@ export function MemberDirectory({
         </CardHeader>
         
         <CardContent className="space-y-6">
-        {/* Search and Filters */}
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search name, Member ID, or DOB (e.g., 06/21/1980)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              aria-label="Search members by name, Member ID, or date of birth"
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600 mb-2 block">Plan</label>
-              <PlanFilter 
-                value={selectedPlans} 
-                onChange={setSelectedPlans}
-                label="Select Plans"
-                multi={true}
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-600 mb-2 block">Abrasion Risk Level</label>
-              <Select value={riskFilter} onValueChange={setRiskFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Abrasion Risk Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Abrasion Risk Levels</SelectItem>
-                  <SelectItem value="Low">Low Abrasion Risk (0-40)</SelectItem>
-                  <SelectItem value="Medium">Medium Abrasion Risk (41-70)</SelectItem>
-                  <SelectItem value="High">High Abrasion Risk (71-100)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-600 mb-2 block">Medical Condition</label>
-              <Select value={conditionFilter} onValueChange={setConditionFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Conditions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Conditions</SelectItem>
-                  {Array.from(new Set(members.flatMap(m => m.conditions))).map(condition => (
-                    <SelectItem key={condition} value={condition}>{condition}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        
-        {/* Member List */}
+        {/* Member List - Filters are now in sidebar */}
         <div 
           ref={listRef}
           className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-gutter-stable focus:outline-none"
@@ -316,6 +218,5 @@ export function MemberDirectory({
         </div>
         </CardContent>
       </Card>
-    </div>
   )
 }

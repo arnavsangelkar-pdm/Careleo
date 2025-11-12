@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,11 +18,12 @@ import {
   Filter
 } from 'lucide-react'
 import type { Member, Outreach } from '@/lib/mock'
-import { exportToCSV } from '@/lib/csv'
+import { mockExport } from '@/lib/exportMock'
+import { loadLocal, saveLocal } from '@/lib/storage'
 import { useToast } from '@/hooks/use-toast'
 import { cohorts, teams } from '@/lib/mock'
-import { groupCohortsByCategory, computeCohortSizes, toMemberCsvRows, membersWithType } from '@/lib/selectors.cohorts'
-import { COHORT_CATEGORY_LABEL, MEMBER_TYPE_LABEL, MEMBER_TYPE_HELP, PLANS } from '@/lib/constants'
+import { groupCohortsByCategory, computeCohortSizes, toMemberCsvRows, membersWithType, filterByHedis, filterByAbrasionBucket } from '@/lib/selectors.cohorts'
+import { COHORT_CATEGORY_LABEL, MEMBER_TYPE_LABEL, MEMBER_TYPE_HELP, PLANS, MEASURE_CODES, ABRASION_BUCKETS } from '@/lib/constants'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface CohortsDashboardProps {
@@ -33,14 +34,67 @@ interface CohortsDashboardProps {
 
 export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDashboardProps) {
   const { toast } = useToast()
-  const [selectedCohortIds, setSelectedCohortIds] = useState<Set<string>>(new Set())
-  const [searchQuery, setSearchQuery] = useState('')
-  const [teamFilter, setTeamFilter] = useState<string>('All')
-  const [riskFilter, setRiskFilter] = useState<string>('All')
-  const [behavioralTypeFilter, setBehavioralTypeFilter] = useState<string>('All')
-  const [planFilter, setPlanFilter] = useState<string>('All')
-  const [vendorFilter, setVendorFilter] = useState<string>('All')
-  const [conditionFilter, setConditionFilter] = useState<string>('All')
+  const [selectedCohortIds, setSelectedCohortIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = loadLocal<string[]>('flt-cohorts-selected', [])
+      return new Set(saved)
+    }
+    return new Set()
+  })
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-search', '')
+    }
+    return ''
+  })
+  const [teamFilter, setTeamFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-team', 'All')
+    }
+    return 'All'
+  })
+  const [riskFilter, setRiskFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-risk', 'All')
+    }
+    return 'All'
+  })
+  const [behavioralTypeFilter, setBehavioralTypeFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-behavioralType', 'All')
+    }
+    return 'All'
+  })
+  const [planFilter, setPlanFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-plan', 'All')
+    }
+    return 'All'
+  })
+  const [vendorFilter, setVendorFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-vendor', 'All')
+    }
+    return 'All'
+  })
+  const [conditionFilter, setConditionFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-condition', 'All')
+    }
+    return 'All'
+  })
+  const [hedisFilter, setHedisFilter] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string[]>('flt-cohorts-hedis', [])
+    }
+    return []
+  })
+  const [abrasionFilter, setAbrasionFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return loadLocal<string>('flt-cohorts-abrasion', 'All')
+    }
+    return 'All'
+  })
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [bulkOutreachDialog, setBulkOutreachDialog] = useState(false)
   const [bulkOutreachData, setBulkOutreachData] = useState({
@@ -58,6 +112,67 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
   const groupedCohorts = useMemo(() => {
     return groupCohortsByCategory(taxonomyCohorts)
   }, [taxonomyCohorts])
+
+  // Persist filters to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-selected', Array.from(selectedCohortIds))
+    }
+  }, [selectedCohortIds])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-search', searchQuery)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-team', teamFilter)
+    }
+  }, [teamFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-risk', riskFilter)
+    }
+  }, [riskFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-behavioralType', behavioralTypeFilter)
+    }
+  }, [behavioralTypeFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-plan', planFilter)
+    }
+  }, [planFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-vendor', vendorFilter)
+    }
+  }, [vendorFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-condition', conditionFilter)
+    }
+  }, [conditionFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-hedis', hedisFilter)
+    }
+  }, [hedisFilter])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      saveLocal('flt-cohorts-abrasion', abrasionFilter)
+    }
+  }, [abrasionFilter])
 
   // Toggle cohort selection
   const toggleCohort = (cohortId: string) => {
@@ -80,6 +195,8 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
     setPlanFilter('All')
     setVendorFilter('All')
     setConditionFilter('All')
+    setHedisFilter([]) // Phase 1
+    setAbrasionFilter('All') // Phase 1
     setSelectedMembers(new Set())
   }
 
@@ -112,8 +229,10 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
     if (planFilter !== 'All') count++
     if (vendorFilter !== 'All') count++
     if (conditionFilter !== 'All') count++
+    if (hedisFilter.length > 0) count++ // Phase 1
+    if (abrasionFilter !== 'All') count++ // Phase 1
     return count
-  }, [selectedCohortIds, searchQuery, teamFilter, riskFilter, behavioralTypeFilter, planFilter, vendorFilter, conditionFilter])
+  }, [selectedCohortIds, searchQuery, teamFilter, riskFilter, behavioralTypeFilter, planFilter, vendorFilter, conditionFilter, hedisFilter, abrasionFilter])
 
   // Filter members based on selected cohorts and other filters
   const filteredMembers = useMemo(() => {
@@ -181,29 +300,22 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
       )
     }
     
+    // Phase 1: Filter by HEDIS gap
+    if (hedisFilter.length > 0) {
+      filtered = filterByHedis(filtered, hedisFilter)
+    }
+    
+    // Phase 1: Filter by abrasion bucket
+    if (abrasionFilter !== 'All') {
+      filtered = filterByAbrasionBucket(filtered, abrasionFilter as 'low' | 'med' | 'high')
+    }
+    
     return filtered
-  }, [members, selectedCohortIds, searchQuery, teamFilter, riskFilter, behavioralTypeFilter, planFilter, vendorFilter, conditionFilter, outreach])
+  }, [members, selectedCohortIds, searchQuery, teamFilter, riskFilter, behavioralTypeFilter, planFilter, vendorFilter, conditionFilter, hedisFilter, abrasionFilter, outreach])
 
   const handleExportCSV = () => {
     if (filteredMembers.length === 0) return
-    
-    const csvData = toMemberCsvRows(filteredMembers).map((row, idx) => ({
-      ...row,
-      'Plan': filteredMembers[idx].plan,
-      'Vendor': filteredMembers[idx].vendor,
-      'Conditions': filteredMembers[idx].conditions.join(', '),
-      'Risk Score': filteredMembers[idx].risk,
-    }))
-    
-    const cohortNames = Array.from(selectedCohortIds)
-      .map(id => cohorts.find(c => c.id === id)?.name || id)
-      .join('_')
-    
-    const filename = selectedCohortIds.size > 0 
-      ? `${cohortNames}_members.csv`
-      : 'all_members.csv'
-    
-    exportToCSV(csvData, filename)
+    mockExport('Cohort', filteredMembers.length)
   }
 
   const handleSelectAll = () => {
@@ -451,6 +563,64 @@ export function CohortsDashboard({ members, outreach, onAddOutreach }: CohortsDa
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Phase 1: HEDIS Gap Filter */}
+              <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">HEDIS Gap (Open)</label>
+                <div className="flex flex-wrap gap-2">
+                  {MEASURE_CODES.map(code => (
+                    <Button
+                      key={code}
+                      variant={hedisFilter.includes(code) ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        if (hedisFilter.includes(code)) {
+                          setHedisFilter(hedisFilter.filter(c => c !== code))
+                        } else {
+                          setHedisFilter([...hedisFilter, code])
+                        }
+                      }}
+                    >
+                      {code}
+                    </Button>
+                  ))}
+                  {hedisFilter.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setHedisFilter([])}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Phase 1: Abrasion Risk Bucket Filter */}
+              <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">Abrasion Risk Bucket</label>
+                <div className="flex gap-2">
+                  {ABRASION_BUCKETS.map(bucket => (
+                    <Button
+                      key={bucket.key}
+                      variant={abrasionFilter === bucket.key ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAbrasionFilter(abrasionFilter === bucket.key ? 'All' : bucket.key)}
+                    >
+                      {bucket.label}
+                    </Button>
+                  ))}
+                  {abrasionFilter !== 'All' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAbrasionFilter('All')}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

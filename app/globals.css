@@ -91,3 +91,40 @@
     outline-offset: 2px;
   }
 }
+
+/* Phase 1: Tab-specific color accents */
+@layer utilities {
+  .tab-accent-card {
+    background-color: hsl(var(--tab-accent) / 0.1);
+    border-color: hsl(var(--tab-accent) / 0.3);
+  }
+  
+  .tab-accent-border {
+    border-color: hsl(var(--tab-accent) / 0.3);
+  }
+  
+  .tab-accent-text {
+    color: hsl(var(--tab-accent));
+  }
+  
+  /* Tab-specific accent colors */
+  .tab-members {
+    --tab-accent: 240 95% 93%; /* Soft blue */
+  }
+  
+  .tab-outreach {
+    --tab-accent: 142 76% 90%; /* Soft green */
+  }
+  
+  .tab-cohorts {
+    --tab-accent: 280 90% 92%; /* Soft purple */
+  }
+  
+  .tab-analytics {
+    --tab-accent: 38 92% 90%; /* Soft orange */
+  }
+  
+  .tab-audit {
+    --tab-accent: 0 0% 90%; /* Soft gray */
+  }
+}
