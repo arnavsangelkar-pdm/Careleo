@@ -43,7 +43,7 @@
 - Responsive design
 
 ✅ **Complete CRM Functionality**
-- 137 members with 3-4 outreach each
+- 10,045 members with 3 outreach each (30,135 total outreach records)
 - Member management, outreach tracking, cohorts, audit trail
 - All data mocked and deterministic
 
@@ -74,8 +74,8 @@ All charts are interactive and filterable via URL parameters.
 
 ### 🎯 Demo Data
 
-- **137 Members** with realistic healthcare data
-- **450 Outreach Records** (3-4 per member)
+- **10,045 Members** with realistic healthcare data
+- **30,135 Outreach Records** (3 per member)
 - **200 Audit Records** for compliance tracking
 - **Deterministic generation** for consistent demo experience
 

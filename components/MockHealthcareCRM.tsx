@@ -41,9 +41,9 @@ export default function MockHealthcareCRM() {
     const initializeData = async () => {
       try {
         setIsLoading(true)
-        // Generate 103 members with exactly 3 outreach each (varied data)
-        const mockMembers = generateMockMembers(103)
-        const mockOutreach = generateMockOutreach(mockMembers, 309) // Exactly 3 outreach per member
+        // Generate 10,045 members with exactly 3 outreach each (varied data)
+        const mockMembers = generateMockMembers(10045)
+        const mockOutreach = generateMockOutreach(mockMembers, 30135) // Exactly 3 outreach per member
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 150)
         
         // Add SDOH profiles to members

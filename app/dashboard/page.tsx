@@ -30,8 +30,8 @@ export default function DashboardPage() {
 
   // Generate mock data (same as main app)
   const { members, outreach } = useMemo(() => {
-    const mockMembers = generateMockMembers(103);
-    const mockOutreach = generateMockOutreach(mockMembers, 309);
+    const mockMembers = generateMockMembers(10045);
+    const mockOutreach = generateMockOutreach(mockMembers, 30135);
     const membersWithSdoh = addSdohProfiles(mockMembers, mockOutreach);
     const membersWithCohorts = attachCohortsAndTypes(membersWithSdoh, { recentWindowDays: 30 });
     return { members: membersWithCohorts, outreach: mockOutreach };
