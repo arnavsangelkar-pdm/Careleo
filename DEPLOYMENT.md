@@ -14,10 +14,11 @@
    - Click "New +" → "Web Service"
 
 2. **Configure Service**
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm start`
+   - **Build Command**: `pnpm install && pnpm run build` (or use `npm install && npm run build` if pnpm is not available)
+   - **Start Command**: `pnpm start` (or `npm start`)
    - **Node Version**: 20.x (specified in package.json)
    - **Root Directory**: `/` (default)
+   - **Note**: The project uses pnpm by default. If Render doesn't support pnpm, you can use npm commands instead.
 
 3. **Environment Variables**
    - No environment variables required (all data is mocked)
@@ -28,6 +29,13 @@
    - Your app will be available at `https://your-app-name.onrender.com`
 
 ### 📊 Features Ready for Production
+
+✅ **Customizable Analytics Dashboard (Phase 3)**
+- Drag-and-drop widget system with 8 widget types
+- Persona-based presets (Quality, Risk Adjustment, Member Services)
+- Local storage persistence per persona
+- Edit mode with add/remove/resize widgets
+- Responsive grid layout
 
 ✅ **Unified Analytics Dashboard**
 - 5 high-quality charts with real data
