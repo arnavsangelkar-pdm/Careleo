@@ -206,7 +206,7 @@ export function MembersTab({
   return (
     <div className="space-y-6">
       <SectionTitle 
-        title="Member Management" 
+        title="Abrasion Risk Assessment" 
         subtitle="Search and manage member profiles with risk assessment and outreach tracking"
       />
 
