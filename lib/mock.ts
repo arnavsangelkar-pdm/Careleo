@@ -1281,3 +1281,80 @@ export function attachCohortsAndTypes(
     return m
   })
 }
+
+// Helper function for ISO date generation
+function isoDaysAgo(d: number): string {
+  const dt = new Date(Date.now() - d * 86400000)
+  return dt.toISOString()
+}
+
+// Generate mock claim lines
+export function generateClaimLines(members: Member[]): import('./types').ClaimLine[] {
+  const out: import('./types').ClaimLine[] = []
+  for (const m of members) {
+    const seed = m.id.charCodeAt(0) + (m.abrasionRisk || 0)
+    const visits = 2 + (seed % 6) // 2–7 encounters
+    for (let i = 0; i < visits; i++) {
+      const daysAgo = (seed + i * 13) % 280 // last ~9 months
+      const paid = Math.round(50 + ((seed * 31 + i * 97) % 5000))
+      out.push({
+        memberId: m.memberId,
+        serviceDate: isoDaysAgo(daysAgo),
+        paid,
+      })
+    }
+  }
+  return out
+}
+
+// Aggregate claims by member
+export function aggregateMemberClaims(lines: import('./types').ClaimLine[]): import('./types').MemberClaimsSummary[] {
+  const byMember = new Map<string, number>()
+  for (const l of lines) {
+    byMember.set(l.memberId, (byMember.get(l.memberId) || 0) + l.paid)
+  }
+  return Array.from(byMember.entries()).map(([memberId, totalPaid]) => ({
+    memberId,
+    periodStart: isoDaysAgo(180),
+    periodEnd: isoDaysAgo(0),
+    totalPaid,
+  }))
+}
+
+// Generate HEDIS gap events - Improved to create better time distribution
+export function generateHedisEvents(members: Member[]): import('./types').HedisGapEvent[] {
+  const out: import('./types').HedisGapEvent[] = []
+  const codes = ['BCS', 'CCS', 'COL', 'CBP', 'HBD'] as const
+  
+  for (const m of members) {
+    const seed = m.id.charCodeAt(0) + m.id.charCodeAt(m.id.length - 1)
+    const code = codes[seed % codes.length]
+    
+    // Create gaps opened over the last 8 months (distributed)
+    const monthsBack = 8
+    const openedMonth = (seed % monthsBack)
+    const openedDaysAgo = 30 * (monthsBack - openedMonth) + (seed % 30)
+    
+    out.push({
+      memberId: m.memberId,
+      measureCode: code,
+      status: 'opened',
+      at: isoDaysAgo(openedDaysAgo),
+    })
+    
+    // 70% of gaps get closed, with varying closure times
+    if (seed % 10 < 7) {
+      // Closure happens 1-4 months after opening
+      const closureDelay = 30 + ((seed * 7) % 90)
+      const closedDaysAgo = Math.max(5, openedDaysAgo - closureDelay)
+      
+      out.push({
+        memberId: m.memberId,
+        measureCode: code,
+        status: 'closed',
+        at: isoDaysAgo(closedDaysAgo),
+      })
+    }
+  }
+  return out
+}

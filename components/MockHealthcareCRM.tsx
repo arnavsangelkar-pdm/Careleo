@@ -13,6 +13,9 @@ import {
   generateMockAudit,
   addSdohProfiles,
   attachCohortsAndTypes,
+  generateClaimLines,
+  aggregateMemberClaims,
+  generateHedisEvents,
   type Member,
   type Outreach,
   type AuditEntry
@@ -30,6 +33,8 @@ export default function MockHealthcareCRM() {
   const [members, setMembers] = useState<Member[]>([])
   const [outreach, setOutreach] = useState<Outreach[]>([])
   const [audit, setAudit] = useState<AuditEntry[]>([])
+  const [memberClaims, setMemberClaims] = useState<import('@/lib/types').MemberClaimsSummary[]>([])
+  const [hedisEvents, setHedisEvents] = useState<import('@/lib/types').HedisGapEvent[]>([])
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
@@ -41,9 +46,9 @@ export default function MockHealthcareCRM() {
     const initializeData = async () => {
       try {
         setIsLoading(true)
-        // Generate 10,045 members with exactly 3 outreach each (varied data)
-        const mockMembers = generateMockMembers(10045)
-        const mockOutreach = generateMockOutreach(mockMembers, 30135) // Exactly 3 outreach per member
+        // Generate 523 members with exactly 3 outreach each (varied data)
+        const mockMembers = generateMockMembers(523)
+        const mockOutreach = generateMockOutreach(mockMembers, 1569) // Exactly 3 outreach per member (523 * 3)
         const mockAudit = generateMockAudit(mockMembers, mockOutreach, 150)
         
         // Add SDOH profiles to members
@@ -52,9 +57,16 @@ export default function MockHealthcareCRM() {
         // Attach cohorts and behavioral types to members
         const membersWithCohorts = attachCohortsAndTypes(membersWithSdoh)
         
+        // Generate claims and HEDIS data
+        const claimLines = generateClaimLines(membersWithCohorts)
+        const claimsSummaries = aggregateMemberClaims(claimLines)
+        const hedisGapEvents = generateHedisEvents(membersWithCohorts)
+        
         setMembers(membersWithCohorts)
         setOutreach(mockOutreach)
         setAudit(mockAudit)
+        setMemberClaims(claimsSummaries)
+        setHedisEvents(hedisGapEvents)
         setIsLoading(false)
       } catch (error) {
         console.error('Error generating mock data:', error)
@@ -278,6 +290,8 @@ export default function MockHealthcareCRM() {
             <AnalyticsDashboard
               outreach={outreach}
               members={members}
+              memberClaims={memberClaims}
+              hedisEvents={hedisEvents}
             />
           </TabsContent>
 

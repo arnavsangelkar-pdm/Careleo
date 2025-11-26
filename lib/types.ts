@@ -78,5 +78,27 @@ export interface Cohort {
   size?: number // optional, derived
 }
 
+// Claims and HEDIS types for analytics
+export interface ClaimLine {
+  memberId: string
+  serviceDate: string // ISO
+  paid: number        // claim paid amount
+  dxGroup?: string
+}
+
+export interface MemberClaimsSummary {
+  memberId: string
+  periodStart: string // ISO
+  periodEnd: string   // ISO
+  totalPaid: number   // total cost in window
+}
+
+export interface HedisGapEvent {
+  memberId: string
+  measureCode: string // e.g., BCS
+  status: 'opened' | 'closed'
+  at: string          // ISO event time
+}
+
 // Re-export existing types for convenience
 export type { Member, Outreach, AuditEntry } from './mock'
