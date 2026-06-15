@@ -1,4 +1,4 @@
-// Metrics and analytics helpers for the Careleo CRM demo
+// Metrics and analytics helpers for the Track Reach CRM demo
 // All calculations are based on mocked data for demonstration purposes
 
 import type { Outreach, Member } from './mock'

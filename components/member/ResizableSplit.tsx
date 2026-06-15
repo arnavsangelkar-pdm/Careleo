@@ -16,7 +16,7 @@ export function ResizableSplit({
   children,
   defaultSizes = [30, 70],
   minSizes = [20, 30],
-  storageKey = 'careleo.members.split',
+  storageKey = 'trackreach.members.split',
   className = ''
 }: ResizableSplitProps) {
   const [sizes, setSizes] = useState<[number, number]>(defaultSizes)

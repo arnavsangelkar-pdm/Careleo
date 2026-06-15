@@ -1,4 +1,4 @@
-// Type definitions for the Careleo CRM demo
+// Type definitions for the Track Reach CRM demo
 // All data and actions are mocked for demonstration purposes
 
 import type { Outreach } from './mock'

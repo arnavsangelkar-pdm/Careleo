@@ -177,7 +177,7 @@ export default function MockHealthcareCRM() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-blue-600" />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Careleo</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Track Reach</h1>
                 </div>
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function MockHealthcareCRM() {
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500">
-            © Careleo Healthcare CRM • Healthcare Management Platform
+            © Track Reach Healthcare CRM • Healthcare Management Platform
           </p>
         </div>
       </footer>

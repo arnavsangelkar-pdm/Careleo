@@ -1,4 +1,4 @@
-# Careleo Healthcare CRM
+# Track Reach Healthcare CRM
 
 A comprehensive CRM system for healthcare organizations built with Next.js 14, TypeScript, and modern UI components. This application provides complete member management, outreach tracking, analytics, and compliance features for healthcare organizations.
 
@@ -267,7 +267,7 @@ This application is ready for deployment on Render.com. Follow these steps:
    - Connect your GitHub account and select this repository
 
 3. **Configure the service:**
-   - **Name:** `careleo-crm-demo` (or your preferred name)
+   - **Name:** `track-reach-crm-demo` (or your preferred name)
    - **Environment:** `Node`
    - **Build Command:** `pnpm install && pnpm build`
    - **Start Command:** `pnpm start`

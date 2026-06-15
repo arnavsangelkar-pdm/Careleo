@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: careleo-healthcare-crm
+    name: track-reach-healthcare-crm
     env: node
     plan: free
     buildCommand: pnpm install && pnpm run build

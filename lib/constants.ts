@@ -1,4 +1,4 @@
-// Constants for the Careleo CRM demo
+// Constants for the Track Reach CRM demo
 // All data and actions are mocked for demonstration purposes
 
 import type { Plan } from './types'

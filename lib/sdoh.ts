@@ -1,4 +1,4 @@
-// SDOH (Social Determinants of Health) helpers for the Careleo CRM demo
+// SDOH (Social Determinants of Health) helpers for the Track Reach CRM demo
 // All calculations are deterministic and mocked for demonstration purposes
 
 import type { Member, Outreach } from './mock'
