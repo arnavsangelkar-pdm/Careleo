@@ -25,7 +25,7 @@ import { OutreachTab } from './OutreachTab'
 import { AuditTab } from './AuditTab'
 import { CohortsDashboard } from './cohorts/CohortsDashboard'
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard'
-import { Shield, Users, MessageSquare, BarChart3, FileText, Target, LayoutDashboard } from 'lucide-react'
+import { Users, MessageSquare, BarChart3, FileText, Target, LayoutDashboard } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingShimmer } from './LoadingShimmer'
 
@@ -174,12 +174,9 @@ export default function MockHealthcareCRM() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Shield className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Track Reach</h1>
-                </div>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/track-reach-logo.png" alt="Track Reach" className="h-8 w-auto" />
+              <h1 className="sr-only">Track Reach</h1>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/dashboard">
