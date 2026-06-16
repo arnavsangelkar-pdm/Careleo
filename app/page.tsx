@@ -2,7 +2,7 @@ import MockHealthcareCRM from '@/components/MockHealthcareCRM'
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-gray-50">
       <MockHealthcareCRM />
     </main>
   )
